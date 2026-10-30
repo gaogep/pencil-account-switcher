@@ -58,7 +58,7 @@ final class PenWebLogin: NSObject, WebLoginProvider, ASWebAuthenticationPresenta
 
     private func read(_ connection: NWConnection, buffer: Data) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { [weak self] data, _, complete, error in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self else { connection.cancel(); return }
                 var buffer = buffer
                 if let data { buffer.append(data) }
@@ -101,7 +101,9 @@ final class PenWebLogin: NSObject, WebLoginProvider, ASWebAuthenticationPresenta
             session?.cancel()
             session = nil
         }
-        server.newConnectionHandler = { [weak self] connection in Task { @MainActor in self?.accept(connection) } }
+        server.newConnectionHandler = { [weak self] connection in
+            Task { @MainActor [weak self] in self?.accept(connection) }
+        }
         try await withCheckedThrowingContinuation { (ready: CheckedContinuation<Void, Error>) in
             var settled = false
             server.stateUpdateHandler = { state in
