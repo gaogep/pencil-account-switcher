@@ -1,0 +1,3644 @@
+{
+  "version": "2.21",
+  "children": [
+    {
+      "type": "frame",
+      "id": "NjyoB",
+      "x": 0,
+      "y": 0,
+      "name": "macOS 菜单栏切号器",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "#101821",
+      "layout": "none",
+      "children": [
+        {
+          "type": "rectangle",
+          "id": "b7p1o",
+          "x": 0,
+          "y": 0,
+          "name": "桌面背景",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "linear",
+            "enabled": true,
+            "rotation": 125,
+            "size": {
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#203847",
+                "position": 0
+              },
+              {
+                "color": "#111D29",
+                "position": 0.55
+              },
+              {
+                "color": "#0B111B",
+                "position": 1
+              }
+            ]
+          },
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "type": "ellipse",
+          "id": "F6nNp",
+          "x": 70,
+          "y": 250,
+          "name": "桌面光晕",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "radial",
+            "enabled": true,
+            "rotation": 0,
+            "size": {
+              "width": 1,
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#37586644",
+                "position": 0
+              },
+              {
+                "color": "#37586600",
+                "position": 1
+              }
+            ]
+          },
+          "width": 650,
+          "height": 650
+        },
+        {
+          "type": "frame",
+          "id": "x9Heb",
+          "x": 0,
+          "y": 0,
+          "name": "macOS 菜单栏",
+          "width": 1440,
+          "height": 32,
+          "fill": "#182731DD",
+          "padding": [
+            0,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "nGD70",
+              "name": "系统菜单",
+              "gap": 20,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hBdNR",
+                  "name": "●",
+                  "fill": "#F4F7F8",
+                  "content": "●",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "DT7G1",
+                  "name": "Finder",
+                  "fill": "#F4F7F8",
+                  "content": "Finder",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "UOywM",
+                  "name": "文件",
+                  "fill": "#F4F7F8",
+                  "content": "文件",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "A6KevZ",
+                  "name": "编辑",
+                  "fill": "#F4F7F8",
+                  "content": "编辑",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "C6OGp",
+                  "name": "显示",
+                  "fill": "#F4F7F8",
+                  "content": "显示",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "qywWh",
+                  "name": "前往",
+                  "fill": "#F4F7F8",
+                  "content": "前往",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "l2npxK",
+                  "name": "窗口",
+                  "fill": "#F4F7F8",
+                  "content": "窗口",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "C7Ojj",
+                  "name": "帮助",
+                  "fill": "#F4F7F8",
+                  "content": "帮助",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Y7yBVM",
+              "name": "状态菜单",
+              "gap": 15,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "U669Ep",
+                  "name": "search",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "search",
+                  "library": "lucide",
+                  "fill": "#E8F0F1"
+                },
+                {
+                  "type": "icon",
+                  "id": "Ri6AT",
+                  "name": "wifi",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "wifi",
+                  "library": "lucide",
+                  "fill": "#E8F0F1"
+                },
+                {
+                  "type": "icon",
+                  "id": "WCOlo",
+                  "name": "battery-full",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "battery-full",
+                  "library": "lucide",
+                  "fill": "#E8F0F1"
+                },
+                {
+                  "type": "frame",
+                  "id": "hZA5r",
+                  "name": "切号器菜单栏图标",
+                  "fill": "#FFFFFF24",
+                  "cornerRadius": 5,
+                  "padding": [
+                    3,
+                    6
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "nlNMP",
+                      "name": "Switchboard 顶栏图标 · 单色",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "panels-left-bottom",
+                      "library": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "p3TZ3z",
+                  "name": "系统时间",
+                  "fill": "#F4F7F8",
+                  "content": "周二  10:24",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "xOkii",
+          "x": 120,
+          "y": 198,
+          "name": "设计说明",
+          "width": 490,
+          "layout": "vertical",
+          "gap": 18,
+          "children": [
+            {
+              "type": "text",
+              "id": "euIDH",
+              "name": "产品标识",
+              "fill": "#8FB0B6",
+              "content": "ACCOUNT SWITCHER  /  FOR MACOS",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "600",
+              "letterSpacing": 2
+            },
+            {
+              "type": "text",
+              "id": "Jwc4q",
+              "name": "标题",
+              "fill": "#F1F7F6",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "账号之间，\n轻松切换。",
+              "lineHeight": 1.2,
+              "fontFamily": "Inter",
+              "fontSize": 47,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "A4g46",
+              "name": "简介",
+              "fill": "#9BAEB3",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "在菜单栏快速查看账号状态与使用额度，\n让每一次切换都简单、清晰。",
+              "lineHeight": 1.7,
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "rFe3L",
+          "x": 120,
+          "y": 814,
+          "name": "桌面说明",
+          "gap": 10,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "aa9lH",
+              "name": "状态点",
+              "fill": "#70DDBB",
+              "width": 7,
+              "height": 7
+            },
+            {
+              "type": "text",
+              "id": "MhUP0",
+              "name": "说明文字",
+              "fill": "#8AA0A6",
+              "content": "在菜单栏中，随时待命",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "mfC5M",
+          "x": 945,
+          "y": 45,
+          "name": "切号器弹出面板",
+          "clip": true,
+          "width": 410,
+          "fill": "#F8FAF9",
+          "cornerRadius": 16,
+          "effect": {
+            "type": "shadow",
+            "shadowType": "outer",
+            "color": "#00000055",
+            "offset": {
+              "x": 0,
+              "y": 18
+            },
+            "blur": 50
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "oePGS",
+              "name": "面板标题栏",
+              "width": "fill_container",
+              "padding": [
+                20,
+                22,
+                16,
+                22
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "GY1OC",
+                  "name": "品牌与标题",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bDMht",
+                      "name": "应用图标",
+                      "width": 32,
+                      "height": 32,
+                      "fill": {
+                        "type": "gradient",
+                        "gradientType": "linear",
+                        "enabled": true,
+                        "rotation": 180,
+                        "size": {
+                          "height": 1
+                        },
+                        "colors": [
+                          {
+                            "color": "#FFFFFF",
+                            "position": 0
+                          },
+                          {
+                            "color": "#D4D9D8",
+                            "position": 1
+                          }
+                        ]
+                      },
+                      "cornerRadius": 9,
+                      "stroke": "#BFC8C5",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "O5uuXx",
+                          "name": "应用图标符号",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "panels-left-bottom",
+                          "library": "lucide",
+                          "fill": "#344440"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nWHzi",
+                      "name": "标题文字",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Xz16b",
+                          "name": "应用名称",
+                          "fill": "#152526",
+                          "content": "Switchboard",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "SM7Vh",
+                          "name": "应用类别",
+                          "fill": "#829190",
+                          "content": "账号切换器",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VCS6X",
+                  "name": "标题栏操作",
+                  "gap": 14,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Yq3OP",
+                      "name": "刷新额度",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "refresh-cw",
+                      "library": "lucide",
+                      "fill": "#748580"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "l4A4cR",
+                      "name": "设置",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "settings-2",
+                      "library": "lucide",
+                      "fill": "#748580"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "lceMI",
+              "name": "刷新反馈区域",
+              "width": "fill_container",
+              "padding": [
+                0,
+                18,
+                12,
+                18
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vp1sV",
+                  "name": "刷新成功提示",
+                  "width": "fill_container",
+                  "fill": "#E7F2EE",
+                  "cornerRadius": 8,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "VhWXp",
+                      "name": "成功图标",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "circle-check",
+                      "library": "lucide",
+                      "fill": "#36A77D"
+                    },
+                    {
+                      "type": "text",
+                      "id": "HZgjH",
+                      "name": "提示文字",
+                      "fill": "#286A53",
+                      "content": "额度已刷新",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ucTSW",
+                      "name": "刷新时间",
+                      "fill": "#729688",
+                      "content": "刚刚更新",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "PJIBZ",
+              "name": "账号内容",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "padding": [
+                2,
+                18,
+                0,
+                18
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "LuQFf",
+                  "name": "当前账号卡片",
+                  "width": "fill_container",
+                  "fill": "#E7F2EE",
+                  "cornerRadius": 11,
+                  "stroke": "#CEE4DB",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 14,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ESZIC",
+                      "name": "当前账号顶部",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NZOsr",
+                          "name": "当前使用状态",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "Tduej",
+                              "name": "在线圆点",
+                              "fill": "#31A77D",
+                              "width": 7,
+                              "height": 7
+                            },
+                            {
+                              "type": "text",
+                              "id": "kzwmB",
+                              "name": "当前使用标签",
+                              "fill": "#43816C",
+                              "content": "当前使用",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "AoZ4d",
+                          "name": "已连接标签",
+                          "fill": "#62917F",
+                          "content": "已连接",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OIqcc",
+                      "name": "当前账号信息",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "yAM1h",
+                          "name": "当前账号头像",
+                          "width": 36,
+                          "height": 36,
+                          "fill": "#B4DCCE",
+                          "cornerRadius": 10,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "gaxVf",
+                              "name": "头像字母",
+                              "fill": "#266D55",
+                              "content": "AL",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gWYU2",
+                          "name": "当前账号邮箱信息",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UMad1",
+                              "name": "当前邮箱",
+                              "fill": "#172C28",
+                              "content": "alex.chen@gmail.com",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "jQ3uc",
+                              "name": "账号方案",
+                              "fill": "#719084",
+                              "content": "Pro 方案",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "h053x",
+                          "name": "已选中",
+                          "width": 18,
+                          "height": 18,
+                          "icon": "circle-check",
+                          "library": "lucide",
+                          "fill": "#36A77D"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OaaVG",
+                      "name": "当前额度",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ofw17",
+                          "name": "额度文字",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "E2lPcg",
+                              "name": "额度标题",
+                              "fill": "#69877A",
+                              "content": "MCP 使用天数",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "vitO7",
+                              "name": "额度数值",
+                              "fill": "#39775F",
+                              "content": "1 / 5 天",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xFgWb",
+                          "name": "额度进度条",
+                          "clip": true,
+                          "width": "fill_container",
+                          "height": 5,
+                          "fill": "#CDE3D9",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "rectangle",
+                              "cornerRadius": 4,
+                              "id": "Xsg35",
+                              "name": "已使用额度",
+                              "fill": "#39AA83",
+                              "width": 66,
+                              "height": 5
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mle2P",
+                  "name": "其他账号标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "T1f0c",
+                      "name": "标题",
+                      "fill": "#273B37",
+                      "content": "其他账号",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "K7uHD",
+                      "name": "账号数量",
+                      "fill": "#98A6A1",
+                      "content": "2 个账号",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b61dd",
+                  "name": "可切换账号列表",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "JfNsI",
+                      "name": "jamie.work@outlook.com",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        10,
+                        2,
+                        13,
+                        2
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "OZ6mn",
+                          "name": "账号行",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "LfiQW",
+                              "name": "账号头像",
+                              "width": 34,
+                              "height": 34,
+                              "fill": "#E6EAF5",
+                              "cornerRadius": 9,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "hTB50",
+                                  "name": "头像字母",
+                                  "fill": "#6A7DB7",
+                                  "content": "JM",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "C8mNvN",
+                              "name": "邮箱和方案",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "v1RUz7",
+                                  "name": "邮箱",
+                                  "fill": "#273A37",
+                                  "content": "jamie.work@outlook.com",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "D26eXb",
+                                  "name": "方案",
+                                  "fill": "#96A39F",
+                                  "content": "团队方案",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "MSxJn",
+                              "name": "切换按钮",
+                              "fill": "#F0F4F2",
+                              "cornerRadius": 6,
+                              "gap": 4,
+                              "padding": [
+                                6,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "sEUnD",
+                                  "name": "切换",
+                                  "fill": "#4B6C5F",
+                                  "content": "切换",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "HZRf3",
+                                  "name": "切换箭头",
+                                  "width": 12,
+                                  "height": 12,
+                                  "icon": "arrow-right",
+                                  "library": "lucide",
+                                  "fill": "#4B6C5F"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "djiYt",
+                          "name": "账号额度",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "J8hve",
+                              "name": "额度数值",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tkAQG",
+                                  "name": "已使用额度",
+                                  "fill": "#95A39E",
+                                  "content": "MCP 使用天数",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "oFbg4",
+                                  "name": "剩余额度",
+                                  "fill": "#6A7DB7",
+                                  "content": "2 / 5 天",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "R3q66",
+                              "name": "额度进度",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 4,
+                              "fill": "#E7EDEA",
+                              "cornerRadius": 3,
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "cornerRadius": 3,
+                                  "id": "VlBOw",
+                                  "name": "已使用",
+                                  "fill": "#6A7DB7",
+                                  "width": 138,
+                                  "height": 4
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Xf9UT",
+                      "name": "alex.creative@icloud.com",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        10,
+                        2,
+                        13,
+                        2
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Gz6ft",
+                          "name": "账号行",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "TTV05",
+                              "name": "账号头像",
+                              "width": 34,
+                              "height": 34,
+                              "fill": "#F6EDDF",
+                              "cornerRadius": 9,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "M5Rnnp",
+                                  "name": "头像字母",
+                                  "fill": "#BE8A45",
+                                  "content": "AC",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "qJGem",
+                              "name": "邮箱和方案",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "i28mr",
+                                  "name": "邮箱",
+                                  "fill": "#273A37",
+                                  "content": "alex.creative@icloud.com",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "QSGBv",
+                                  "name": "方案",
+                                  "fill": "#96A39F",
+                                  "content": "免费方案",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "mlOeF",
+                              "name": "切换按钮",
+                              "fill": "#F0F4F2",
+                              "cornerRadius": 6,
+                              "gap": 4,
+                              "padding": [
+                                6,
+                                8
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "QfztR",
+                                  "name": "切换",
+                                  "fill": "#4B6C5F",
+                                  "content": "切换",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "B2QZNI",
+                                  "name": "切换箭头",
+                                  "width": 12,
+                                  "height": 12,
+                                  "icon": "arrow-right",
+                                  "library": "lucide",
+                                  "fill": "#4B6C5F"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "c7Sy6",
+                          "name": "账号额度",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "h6EDsp",
+                              "name": "额度数值",
+                              "width": "fill_container",
+                              "justifyContent": "space_between",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "s7eBs",
+                                  "name": "已使用额度",
+                                  "fill": "#95A39E",
+                                  "content": "MCP 使用天数",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "AHCBM",
+                                  "name": "剩余额度",
+                                  "fill": "#BE8A45",
+                                  "content": "4 / 5 天",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "sbjqn",
+                              "name": "额度进度",
+                              "clip": true,
+                              "width": "fill_container",
+                              "height": 4,
+                              "fill": "#E7EDEA",
+                              "cornerRadius": 3,
+                              "children": [
+                                {
+                                  "type": "rectangle",
+                                  "cornerRadius": 3,
+                                  "id": "CprsL",
+                                  "name": "已使用",
+                                  "fill": "#BE8A45",
+                                  "width": 277,
+                                  "height": 4
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gKsph",
+                  "name": "添加账号按钮",
+                  "width": "fill_container",
+                  "height": 38,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": "#D9E3DE",
+                  "strokeWidth": 1,
+                  "gap": 7,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Shw7o",
+                      "name": "添加图标",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "plus",
+                      "library": "lucide",
+                      "fill": "#4C7464"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zT5Bp",
+                      "name": "添加账号",
+                      "fill": "#4C7464",
+                      "content": "添加账号",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MMWft",
+              "name": "面板底部",
+              "width": "fill_container",
+              "padding": [
+                17,
+                20,
+                18,
+                20
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "PTw8I",
+                  "name": "更新时间",
+                  "fill": "#A0ADA8",
+                  "content": "额度更新于 刚刚",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "l7rW0",
+                  "name": "快捷键提示",
+                  "gap": 5,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vYSqL",
+                      "name": "快捷键标签",
+                      "fill": "#A0ADA8",
+                      "content": "快速打开",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WLNui",
+                      "name": "快捷键",
+                      "fill": "#EDF1EF",
+                      "cornerRadius": 4,
+                      "padding": [
+                        3,
+                        5
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "PRnqT",
+                          "name": "组合键",
+                          "fill": "#7F8D87",
+                          "content": "⌘ ⇧ A",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "SheJ9",
+      "x": 1540,
+      "y": 0,
+      "name": "设置 · 菜单栏面板",
+      "clip": true,
+      "width": 410,
+      "fill": "#F8FAF9",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "bPWjI",
+          "name": "设置页标题栏",
+          "width": "fill_container",
+          "padding": [
+            20,
+            22,
+            18,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "du7JL",
+              "name": "返回与标题",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hXhYR",
+                  "name": "返回账号列表",
+                  "width": 30,
+                  "height": 30,
+                  "fill": "#EDF2EF",
+                  "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "cNqvF",
+                      "name": "返回箭头",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "arrow-left",
+                      "library": "lucide",
+                      "fill": "#526B60"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hwIcK",
+                  "name": "设置标题",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "r0lAXy",
+                      "name": "标题",
+                      "fill": "#152526",
+                      "content": "设置",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "aZfMs",
+                      "name": "说明",
+                      "fill": "#8C9A94",
+                      "content": "管理你的切换体验",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "icon",
+              "id": "AUkwN",
+              "name": "设置图标",
+              "width": 17,
+              "height": 17,
+              "icon": "settings-2",
+              "library": "lucide",
+              "fill": "#84958D"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "t766l",
+          "name": "设置内容",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "padding": [
+            0,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "u903t",
+              "name": "通用",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "f3Vg6",
+                  "name": "通用标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dcEtA",
+                      "name": "分组标题",
+                      "fill": "#334741",
+                      "content": "通用",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nEorc",
+                  "name": "通用选项",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 10,
+                  "stroke": "#E4EBE7",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "dTMgf",
+                      "name": "开机自动启动",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        12,
+                        13
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "kvl0J",
+                          "name": "选项说明",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Crc4W",
+                              "name": "名称",
+                              "fill": "#2E403A",
+                              "content": "开机自动启动",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "IXRfC",
+                              "name": "描述",
+                              "fill": "#98A59F",
+                              "content": "登录 Mac 时自动运行切号器",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "a2T3So",
+                          "name": "开启开关",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#47B18B",
+                          "cornerRadius": 10,
+                          "padding": 2,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "LCcDj",
+                              "name": "开关圆点",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Hq8dj",
+                      "name": "快速打开",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        12,
+                        13
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "wYZxO",
+                          "name": "选项说明",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZgHv1",
+                              "name": "名称",
+                              "fill": "#2E403A",
+                              "content": "快速打开",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "bapRB",
+                              "name": "描述",
+                              "fill": "#98A59F",
+                              "content": "使用快捷键打开或关闭面板",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "HFAam",
+                          "name": "选项值",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "lIeFU",
+                              "name": "当前值",
+                              "fill": "#71847B",
+                              "content": "⌘ ⇧ A",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "p0ZzDI",
+              "name": "额度与通知",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JNIGF",
+                  "name": "额度与通知标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rMlS3",
+                      "name": "分组标题",
+                      "fill": "#334741",
+                      "content": "额度刷新",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sn3U5",
+                  "name": "额度与通知选项",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 10,
+                  "stroke": "#E4EBE7",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "PtlCA",
+                      "name": "自动刷新额度",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        12,
+                        13
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "UCF3x",
+                          "name": "选项说明",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Qci1O",
+                              "name": "名称",
+                              "fill": "#2E403A",
+                              "content": "自动刷新额度",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "TFMRV",
+                              "name": "描述",
+                              "fill": "#98A59F",
+                              "content": "定期更新各账号的 MCP 使用天数",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "kqf8g",
+                          "name": "开启开关",
+                          "width": 32,
+                          "height": 18,
+                          "fill": "#47B18B",
+                          "cornerRadius": 10,
+                          "padding": 2,
+                          "justifyContent": "end",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "XTRUj",
+                              "name": "开关圆点",
+                              "fill": "#FFFFFF",
+                              "width": 14,
+                              "height": 14
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lQrQA",
+                      "name": "刷新频率",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        12,
+                        13
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "cgdDf",
+                          "name": "选项说明",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "LHJJf",
+                              "name": "名称",
+                              "fill": "#2E403A",
+                              "content": "刷新频率",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "G08KWz",
+                              "name": "描述",
+                              "fill": "#98A59F",
+                              "content": "选择额度自动更新的间隔",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "tjcgN",
+                          "name": "选项值",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "n7FBl",
+                              "name": "当前值",
+                              "fill": "#71847B",
+                              "content": "每天一次",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "T2DVJW",
+                              "name": "展开",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "chevron-down",
+                              "library": "lucide",
+                              "fill": "#98A79F"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TB6Fd",
+              "name": "账号",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "LF5Md",
+                  "name": "账号标题",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wrUNa",
+                      "name": "分组标题",
+                      "fill": "#334741",
+                      "content": "账号",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "L2BnUK",
+                  "name": "账号选项",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 10,
+                  "stroke": "#E4EBE7",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ksJqD",
+                      "name": "管理账号",
+                      "width": "fill_container",
+                      "gap": 12,
+                      "padding": [
+                        12,
+                        13
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Bh24m",
+                          "name": "选项说明",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ypgtC",
+                              "name": "名称",
+                              "fill": "#2E403A",
+                              "content": "管理账号",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "VCBbH",
+                              "name": "描述",
+                              "fill": "#98A59F",
+                              "content": "添加、查看或移除已登录账号",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "d2C70",
+                          "name": "选项值",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "KMgit",
+                              "name": "当前值",
+                              "fill": "#71847B",
+                              "content": "3 个账号",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "Eofgt",
+                              "name": "展开",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "chevron-down",
+                              "library": "lucide",
+                              "fill": "#98A79F"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "jyAbK",
+          "name": "设置页底部",
+          "width": "fill_container",
+          "padding": [
+            22,
+            22,
+            20,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "w3aH7s",
+              "name": "版本号",
+              "fill": "#A0ADA7",
+              "content": "Switchboard  ·  版本 1.0.0",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "F7pUS",
+              "name": "退出应用",
+              "fill": "#75877E",
+              "content": "退出应用",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "600"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "u9BED",
+      "x": 2050,
+      "y": 0,
+      "name": "账号管理 · 菜单栏面板",
+      "clip": true,
+      "width": 410,
+      "fill": "#F8FAF9",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "o8KQk8",
+          "name": "账号管理标题栏",
+          "width": "fill_container",
+          "padding": [
+            20,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "O7gpef",
+              "name": "返回和标题",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uk7ZR",
+                  "name": "返回设置",
+                  "width": 30,
+                  "height": 30,
+                  "fill": "#EDF2EF",
+                  "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "rB9Yo",
+                      "name": "返回箭头",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "arrow-left",
+                      "library": "lucide",
+                      "fill": "#526B60"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lAlM0",
+                  "name": "标题文字",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Izhup",
+                      "name": "标题",
+                      "fill": "#152526",
+                      "content": "管理账号",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dDhtm",
+                      "name": "说明",
+                      "fill": "#8C9A94",
+                      "content": "添加或移除已登录的账号",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "QJ4Sp",
+              "name": "账号数",
+              "fill": "#95A49D",
+              "content": "3 个账号",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "P2ZZn",
+          "name": "管理内容",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            0,
+            20
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "NrD1w",
+              "name": "列表标题",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "A32D2",
+                  "name": "已添加账号",
+                  "fill": "#334741",
+                  "content": "已添加账号",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "YTihE",
+                  "name": "状态说明",
+                  "fill": "#9BA9A2",
+                  "content": "邮箱与登录状态",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "N1vDy",
+              "name": "账号管理列表",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 10,
+              "stroke": "#E4EBE7",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IzHOy",
+                  "name": "alex.chen@gmail.com",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "padding": [
+                    14,
+                    13
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "y6Xsl",
+                      "name": "账号头像",
+                      "width": 34,
+                      "height": 34,
+                      "fill": "#B4DCCE",
+                      "cornerRadius": 9,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ZFu58",
+                          "name": "头像字母",
+                          "fill": "#266D55",
+                          "content": "AL",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oCYKI",
+                      "name": "账号信息",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XGvXj",
+                          "name": "邮箱",
+                          "fill": "#273A37",
+                          "content": "alex.chen@gmail.com",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VayUe",
+                          "name": "方案和状态",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "J9hzQo",
+                              "name": "方案",
+                              "fill": "#95A39E",
+                              "content": "Pro 方案",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "ellipse",
+                              "id": "n2gAl",
+                              "name": "状态点",
+                              "fill": "#48AF87",
+                              "width": 4,
+                              "height": 4
+                            },
+                            {
+                              "type": "text",
+                              "id": "MjG4l",
+                              "name": "使用中",
+                              "fill": "#42A27E",
+                              "content": "当前使用",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mnB2K",
+                      "name": "移除账号按钮",
+                      "fill": "#F5F7F6",
+                      "cornerRadius": 6,
+                      "gap": 4,
+                      "padding": [
+                        7,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ct4nI",
+                          "name": "移除图标",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "trash-2",
+                          "library": "lucide",
+                          "fill": "#899A92"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QzVGh",
+                          "name": "移除",
+                          "fill": "#778B81",
+                          "content": "移除",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dRVXZ",
+                  "name": "jamie.work@outlook.com",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "padding": [
+                    14,
+                    13
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "PQX3Q",
+                      "name": "账号头像",
+                      "width": 34,
+                      "height": 34,
+                      "fill": "#E6EAF5",
+                      "cornerRadius": 9,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "a2xjED",
+                          "name": "头像字母",
+                          "fill": "#6A7DB7",
+                          "content": "JM",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gIaFo",
+                      "name": "账号信息",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "keMXV",
+                          "name": "邮箱",
+                          "fill": "#273A37",
+                          "content": "jamie.work@outlook.com",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VJtXZ",
+                          "name": "方案和状态",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ryhmg",
+                              "name": "方案",
+                              "fill": "#95A39E",
+                              "content": "团队方案",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "F7oGe",
+                      "name": "移除账号按钮",
+                      "fill": "#F5F7F6",
+                      "cornerRadius": 6,
+                      "gap": 4,
+                      "padding": [
+                        7,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "LLDMB",
+                          "name": "移除图标",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "trash-2",
+                          "library": "lucide",
+                          "fill": "#899A92"
+                        },
+                        {
+                          "type": "text",
+                          "id": "g1wPt",
+                          "name": "移除",
+                          "fill": "#778B81",
+                          "content": "移除",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jE8QA",
+                  "name": "alex.creative@icloud.com",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "padding": [
+                    14,
+                    13
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "K9rGN",
+                      "name": "账号头像",
+                      "width": 34,
+                      "height": 34,
+                      "fill": "#F6EDDF",
+                      "cornerRadius": 9,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QVzSm",
+                          "name": "头像字母",
+                          "fill": "#BE8A45",
+                          "content": "AC",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vEC52",
+                      "name": "账号信息",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ODrWi",
+                          "name": "邮箱",
+                          "fill": "#273A37",
+                          "content": "alex.creative@icloud.com",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "J9purJ",
+                          "name": "方案和状态",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "eUUQH",
+                              "name": "方案",
+                              "fill": "#95A39E",
+                              "content": "免费方案",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FcgDO",
+                      "name": "移除账号按钮",
+                      "fill": "#F5F7F6",
+                      "cornerRadius": 6,
+                      "gap": 4,
+                      "padding": [
+                        7,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "CHy34",
+                          "name": "移除图标",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "trash-2",
+                          "library": "lucide",
+                          "fill": "#899A92"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Wr3wR",
+                          "name": "移除",
+                          "fill": "#778B81",
+                          "content": "移除",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "CuUZu",
+              "name": "添加账号按钮",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "stroke": "#D9E3DE",
+              "strokeWidth": 1,
+              "gap": 7,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "FNe87",
+                  "name": "添加图标",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "plus",
+                  "library": "lucide",
+                  "fill": "#4C7464"
+                },
+                {
+                  "type": "text",
+                  "id": "wQrax",
+                  "name": "添加账号",
+                  "fill": "#4C7464",
+                  "content": "添加账号",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fQ9gv",
+              "name": "管理提示",
+              "width": "fill_container",
+              "gap": 7,
+              "padding": [
+                10,
+                1
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "eTml0",
+                  "name": "信息图标",
+                  "width": 13,
+                  "height": 13,
+                  "icon": "info",
+                  "library": "lucide",
+                  "fill": "#98A9A0"
+                },
+                {
+                  "type": "text",
+                  "id": "sp7DC",
+                  "name": "管理提示文字",
+                  "fill": "#98A9A0",
+                  "content": "移除账号前会再次确认。",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "xf6Tk",
+          "name": "管理页底部",
+          "width": "fill_container",
+          "padding": [
+            14,
+            22,
+            20,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "eb0fX",
+              "name": "应用名称",
+              "fill": "#A0ADA7",
+              "content": "Switchboard  ·  账号管理",
+              "fontFamily": "Inter",
+              "fontSize": 10,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "IEpOM",
+              "name": "返回设置链接",
+              "fill": "#75877E",
+              "content": "返回设置",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "600"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "b77e1",
+      "x": 2540,
+      "y": 0,
+      "name": "需求文档 01 · 产品与主面板",
+      "width": 760,
+      "fill": "#F8FAF9",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "gap": 26,
+      "padding": 36,
+      "children": [
+        {
+          "type": "frame",
+          "id": "xoZMv",
+          "name": "文档标题区",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 10,
+          "children": [
+            {
+              "type": "text",
+              "id": "O9O5q",
+              "name": "文档编号",
+              "fill": "#568571",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "01 / 03  ·  对应「macOS 菜单栏切号器」",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "zckxr",
+              "name": "文档标题",
+              "fill": "#192E26",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "产品定位与账号切换",
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "X4SJt",
+              "name": "文档版本",
+              "fill": "#7A8B82",
+              "content": "Switchboard  /  需求说明 v1.0  /  基于当前原型",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "plwYv",
+          "name": "01  文档范围与约定",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "rEu3b",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "01  文档范围与约定",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "rhBzl",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "产品暂名：Switchboard。为某款使用邮箱登录的软件提供 macOS 菜单栏账号切换能力。用户无需反复退出、输入邮箱，即可查看当前账号并切换到其他已添加账号。\n\n本文件以当前三张原型及已确认修改为依据。「已确认」表示用户明确要求；「原型约定」表示当前设计中已有的呈现；「建议规则」用于补全尚未绘制的异常与交互；「待确认」表示不能从原型推定的产品或技术细节。\n\n邮箱、方案、额度、版本号均为演示数据。左侧宣传文案和桌面背景仅用于展示，不属于应用功能。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "S0rUbS",
+          "name": "02  产品范围与导航",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "HrtKm",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "02  产品范围与导航",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "oW5Ak",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "已确认：常驻 macOS 顶部菜单栏；点击后打开轻量弹出面板；展示当前邮箱和各账号使用天数；支持快速切换邮箱账号；风格简约、具有科技感。\n\n导航结构：菜单栏图标 → 账号主面板 → 设置 → 管理账号。设置页返回主面板；管理页返回设置。主面板和管理页均提供添加账号入口。\n\n建议规则：重复点击菜单栏图标、点击面板外部或按 Esc 关闭面板；关闭面板不退出应用。重新打开默认进入主面板。菜单栏定位应随屏幕边缘调整，保证面板完整可见。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "k8YNC",
+          "name": "03  主面板信息与布局",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "spg4J",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "03  主面板信息与布局",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "YWewg",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "顶部：银白色圆角应用图标、产品名、账号切换器说明；右侧为手动刷新和设置按钮。菜单栏采用同一符号的单色小图标，保证小尺寸可辨认。\n\n当前账号区：显示邮箱、可用时显示方案名称、当前使用标签与连接状态；以浅绿色背景和选中标记强调当前账号。这里不提供重复切换按钮。\n\n其他账号区：展示邮箱、方案、MCP 使用天数、进度条和「切换」按钮；数量为除当前账号外的已添加账号数。不能仅依靠颜色表达使用状态。\n\n底部：添加账号入口、额度更新时间、快速打开快捷键提示。原型面板宽度约 410；实际窗口高度随内容变化。账号过多时，建议列表区域滚动，标题及底部操作保持可访问。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Z3iP9G",
+          "name": "04  切换账号流程",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "M8Ej39",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "04  切换账号流程",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "SzSX6",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "入口：点击其他账号对应的「切换」按钮。\n\n建议规则：目标行显示「切换中…」，避免重复提交；同一时刻只允许一个切换任务。成功前保留原当前账号标记，不提前把目标账号视为已连接。\n\n成功：以目标软件确认的登录身份为准更新当前账号；目标账号移至当前账号区，原账号回到其他账号区；同步更新列表数量、方案和状态，并显示简短成功反馈。\n\n失败：保留可核实的原账号状态，显示明确原因及重试入口；若实际登录状态无法确认，显示「状态待确认」，重新读取目标软件状态。凭证过期时提示重新登录。\n\n建议：除当前账号置顶外，其余账号保持添加顺序；不因刷新而随意重排。切换不应改写账号的真实额度。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "m5At6",
+          "name": "05  MCP 使用天数的显示规则",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "B5lZSd",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "05  MCP 使用天数的显示规则",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "k5SX4e",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "已确认：使用「MCP 使用天数」和「已使用天数 / 总天数」呈现。例如 1 / 5 天表示已使用 1 天，总额度 5 天；不是剩余 1 天，也不是次数、金额或百分比额度。\n\n进度条 = 已使用天数 ÷ 总天数。1 / 5 对应 20%，2 / 5 对应 40%，4 / 5 对应 80%。显示原始天数，进度条仅作辅助表达。\n\n建议规则：未获取时显示「— / — 天」与加载状态；接口失败时保留最后成功数据并标记更新失败；总天数为 0 或未知时不进行除法计算。若返回值异常，进度条限制在可见范围并提示数据异常。\n\n「Active Days of MCP Usage」的自然日定义、周期重置、时区和总天数均以目标软件提供的真实数据为准，不从本地登录次数推算。达到总额度后是否仍可切换，待接入规则确认。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "zQs2Z",
+      "x": 3380,
+      "y": 0,
+      "name": "需求文档 02 · 设置与账号管理",
+      "width": 760,
+      "fill": "#F8FAF9",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "gap": 26,
+      "padding": 36,
+      "children": [
+        {
+          "type": "frame",
+          "id": "scS4Z",
+          "name": "文档标题区",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 10,
+          "children": [
+            {
+              "type": "text",
+              "id": "WBfEB",
+              "name": "文档编号",
+              "fill": "#568571",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "02 / 03  ·  对应「设置」与「账号管理」",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "iFWh8",
+              "name": "文档标题",
+              "fill": "#192E26",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "设置与账号生命周期",
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "c1B1L",
+              "name": "文档版本",
+              "fill": "#7A8B82",
+              "content": "Switchboard  /  需求说明 v1.0  /  基于当前原型",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "j2PCD2",
+          "name": "06  设置页与已确认调整",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "Y1zdn",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "06  设置页与已确认调整",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "u3fkX",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "设置页沿用主面板宽度和视觉语言，顶部提供返回账号列表入口。分组为「通用」「额度刷新」「账号」，底部展示版本和退出应用。\n\n已确认：删除「额度即将用尽提醒」。不提供相关开关、阈值设置或自动通知。进度条仍用于表达使用情况。\n\n原型约定：开机自动启动、额度自动刷新显示为开启状态；最终首次安装默认值需确认。设置变更建议即时生效并持久化，无需额外保存按钮。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "QnT0L",
+          "name": "07  启动、快捷键与退出",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "ugdqz",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "07  启动、快捷键与退出",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "O6Qt8G",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "开机自动启动：控制用户登录 Mac 后是否启动切号器。建议同步系统实际授权状态；设置失败时恢复原值并反馈原因。该开关不代表自动启动目标软件。\n\n快速打开：原型显示 ⌘ ⇧ A，用于打开或关闭面板。是否允许自定义快捷键尚未确定；若实现编辑，需要捕获组合键、检测系统冲突，并在主面板同步提示。\n\n退出应用：结束切号器进程并移除菜单栏图标。建议保留已添加账号与设置，不默认退出目标软件或清除其登录状态。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "yXf58",
+          "name": "08  额度刷新与更新时间",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "cYq7l",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "08  额度刷新与更新时间",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "n8Yzl6",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "已确认：刷新频率默认每天一次。手动刷新入口保留，不受自动刷新开关影响。\n\n建议调度规则：以各账号最后一次成功刷新时间为基准，满 24 小时更新一次；应用启动或电脑唤醒时检查是否到期，过期则补一次刷新，不堆积错过的任务。不要求应用退出后仍在后台调度。\n\n关闭自动刷新：停止定时更新，保留缓存数据；手动刷新仍可执行。刷新频率控件可保留当前值并禁用。原型有下拉箭头，但除「每天一次」外的频率选项尚未确认。\n\n手动刷新：点击顶部刷新图标后读取各账号额度，执行时显示进度并防止重复请求。新增账号首次尝试获取额度；切换后读取可用缓存，仅在过期时补刷。\n\n更新时间只在对应数据成功返回后更新。部分账号失败时标明部分更新失败，不将未更新数据表示为最新。当天展示时间，跨天建议显示日期与时间。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "UFE3E",
+          "name": "09  管理账号页面",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "UIKpU",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "09  管理账号页面",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "rm5kr",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "入口：点击设置页「管理账号」整行或右侧「3 个账号」区域进入管理页，建议使用向右箭头表达页面跳转。\n\n页面展示：账号总数、邮箱、可用时显示方案、当前账号标签、每行移除按钮；底部提供添加账号和返回设置。总数包含当前账号，必须与主面板同步。\n\n邮箱应优先完整展示。超长邮箱允许中间省略，并提供完整内容查看方式。头像使用字母缩写，仅作为视觉辅助，不用于唯一标识账号。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "J17CU",
+          "name": "10  添加与移除账号",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "rSKEC",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "10  添加与移除账号",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "dw1AO",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "添加入口：主面板与管理页进入同一添加流程。具体登录方式待确认，不预设邮箱密码、验证码或 OAuth 中的任何一种已得到支持。\n\n建议添加流程：触发目标软件支持的认证 → 用户完成认证 → 读取真实账号身份 → 去重并保存可恢复的登录状态 → 获取额度 → 返回来源页面。取消或失败不得新增空记录；重复添加应更新现有账号或提示已存在。新账号是否自动成为当前账号，以认证后的实际软件状态为准。\n\n移除：原型已约定再次确认。建议弹窗展示完整邮箱，明确「从切号器移除此账号」；提供取消和确认移除。取消不修改任何数据。移除本地记录不等于注销远端账号。\n\n建议当前账号不可直接移除，提示先切换其他账号或按明确支持的退出流程处理。仅剩一个当前账号时仍遵守此规则；该策略需在开发前确认。\n\n移除成功后删除本地对应登录凭据与额度缓存，更新各页数量；失败时保留记录并反馈。添加表单、移除确认弹窗等状态尚未绘制。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "RsVN2",
+      "x": 4220,
+      "y": 0,
+      "name": "需求文档 03 · 状态与验收",
+      "width": 760,
+      "fill": "#F8FAF9",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "gap": 26,
+      "padding": 36,
+      "children": [
+        {
+          "type": "frame",
+          "id": "dlbg5",
+          "name": "文档标题区",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 10,
+          "children": [
+            {
+              "type": "text",
+              "id": "zvVXX",
+              "name": "文档编号",
+              "fill": "#568571",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "03 / 03  ·  开发补充规则与待确认项",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "VR0O5",
+              "name": "文档标题",
+              "fill": "#192E26",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "状态、数据与验收标准",
+              "fontFamily": "Inter",
+              "fontSize": 28,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "IjNSH",
+              "name": "文档版本",
+              "fill": "#7A8B82",
+              "content": "Switchboard  /  需求说明 v1.0  /  基于当前原型",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "r9x95M",
+          "name": "11  数据与状态一致性",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "G53Y89",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "11  数据与状态一致性",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "tugq0",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "建议账号记录包含：稳定账号标识、邮箱、方案名称（可空）、凭据引用、认证状态、是否当前账号、已使用天数、总天数、额度最后成功更新时间、最近错误与添加时间。\n\n建议应用设置包含：开机启动偏好、自动刷新开关、刷新间隔（默认 1 天）、快捷键配置（如支持编辑）。\n\n同一时刻最多一个账号标记为当前使用，且以目标软件实际身份为准。列表中的邮箱文本不能单独充当可靠唯一标识；优先使用服务端账号 ID。\n\n凭据存入 macOS Keychain 等系统安全存储，普通配置仅保存引用。日志和界面错误信息不得暴露密码、验证码或登录令牌。移除账号时同步清理相应本地凭据。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "YqXKE",
+          "name": "12  未绘制状态的建议行为",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "YM4CS",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "12  未绘制状态的建议行为",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "fE44w",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "无账号：展示「还没有添加账号」及添加按钮；隐藏当前账号卡片，账号数量显示 0，不显示伪造额度。\n\n加载中：显示占位或局部加载指示，不能把未知额度显示为 0。刷新已有数据时保留原内容，避免界面跳动。\n\n认证失效：标记「登录已过期」，提供重新登录入口；不得继续显示已连接。其他有效账号仍可操作。\n\n离线或接口错误：保留最后成功数据与时间，展示可理解的错误及重试入口；避免静默失败。\n\n目标软件未安装、未启动或版本不兼容：在相关操作处说明原因及下一步处理方式；不要伪造切换成功。如何启动目标软件及是否需要重启，取决于实际接入方式。\n\n操作反馈：添加、切换、移除、刷新均须有执行中与结果反馈；关闭面板后再次打开，应展示真实任务与账号状态。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "xF4Zh",
+          "name": "13  视觉与可访问性",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "L5ZGl",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "13  视觉与可访问性",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "QkqeX",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "保持浅色面板、低饱和绿色强调、银白色简约图标；账号状态与操作优先于装饰。当前账号使用浅绿色区域，其余账号以紧凑列表呈现。\n\n账号切换、返回、添加、移除均提供可读文字或清晰的辅助名称。图标按钮需具备悬停提示及 VoiceOver 标签；状态不能仅依赖颜色区分。\n\n建议支持键盘 Tab 导航、Enter 执行、Esc 关闭；提供可见焦点，避免过小点击区域。长文本、较多账号和错误提示出现时，不应覆盖底部操作或裁切核心信息。\n\n当前画布为静态可编辑原型，尚未实现真实按钮跳转、账号认证、额度读取及系统菜单栏集成。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "RFGHj",
+          "name": "14  验收清单",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "PnEMX",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "14  验收清单",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "Y5QbA",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "01  点击菜单栏图标可展开面板，关闭面板不退出应用。\n02  当前邮箱标记与目标软件实际登录身份一致。\n03  每个账号展示真实 MCP 使用天数；1 / 5 天对应 20% 进度。\n04  切换中防止重复提交；成功后各页同步；失败有反馈且不误报成功。\n05  自动刷新默认每天一次，关闭后停止定时任务，手动刷新可用。\n06  设置中不存在额度用尽提醒及其通知逻辑。\n07  设置页可进入账号管理，管理页可返回；账号数量一致。\n08  添加取消不新增记录；重复账号不重复列出。\n09  移除前显示确认，取消无副作用；成功后记录、凭据和数量同步更新。\n10  空列表、长邮箱、多账号、离线、认证失效和刷新失败均有可用状态。\n11  应用重启后保留设置及账号列表，重新校验当前身份。\n12  关键操作可由键盘访问，敏感凭据不出现在普通配置或日志中。\n\n以上建议行为在确认后作为开发验收依据；无法接入真实目标软件前，不以静态演示视为功能完成。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "F86Xg",
+          "name": "15  开发前待确认",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "zUBos",
+              "name": "章节标题",
+              "fill": "#28543F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "15  开发前待确认",
+              "fontFamily": "Inter",
+              "fontSize": 17,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "cpZXO",
+              "name": "需求正文",
+              "fill": "#495A51",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "目标软件名称、支持版本、最低 macOS 版本，以及是否支持 Apple Silicon 与 Intel。\n\n官方或实际可用的登录、切换、退出、额度读取方式；是否允许多个账号凭据在本机持久保存，是否需要重启目标软件才能生效。\n\nActive Days 的统计时区、扣减触发条件、额度周期及重置规则；额度耗尽是否限制登录或仅限制 MCP 使用。\n\n是否开放自定义快捷键及其他刷新频率；开机启动和自动刷新的首次默认状态。\n\n移除当前账号的最终策略、添加账号是否改变当前身份，以及认证异常后的恢复方式。\n\n正式产品名、图标定稿、版本信息与真实方案名称。以上内容未从当前原型得到确认，不应直接假设为既有能力。",
+              "lineHeight": 1.65,
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "veF64",
+      "x": 0,
+      "y": 1000,
+      "name": "应用图标 · 独立版",
+      "width": 256,
+      "height": 256,
+      "fill": {
+        "type": "gradient",
+        "gradientType": "linear",
+        "enabled": true,
+        "rotation": 90,
+        "size": {
+          "height": 1
+        },
+        "colors": [
+          {
+            "color": "#55595B",
+            "position": 0
+          },
+          {
+            "color": "#D9DDDE",
+            "position": 0.08
+          },
+          {
+            "color": "#FFFFFF",
+            "position": 0.22
+          },
+          {
+            "color": "#A1A5A6",
+            "position": 0.49
+          },
+          {
+            "color": "#F4F5F4",
+            "position": 0.73
+          },
+          {
+            "color": "#787D7E",
+            "position": 0.94
+          },
+          {
+            "color": "#E7E8E7",
+            "position": 1
+          }
+        ]
+      },
+      "cornerRadius": 72,
+      "stroke": "#858A8B",
+      "strokeWidth": 1,
+      "effect": {
+        "type": "shadow",
+        "shadowType": "outer",
+        "color": "#24272955",
+        "offset": {
+          "x": 0,
+          "y": 5
+        },
+        "blur": 10
+      },
+      "padding": 4,
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "wjFPw",
+          "name": "银色表面 · 边缘倒角",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": {
+            "type": "gradient",
+            "gradientType": "linear",
+            "enabled": true,
+            "rotation": 180,
+            "size": {
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#F8F8F7",
+                "position": 0
+              },
+              {
+                "color": "#EEEEED",
+                "position": 0.38
+              },
+              {
+                "color": "#DBDDDC",
+                "position": 0.82
+              },
+              {
+                "color": "#C9CBCA",
+                "position": 1
+              }
+            ]
+          },
+          "cornerRadius": 68,
+          "stroke": {
+            "type": "gradient",
+            "gradientType": "linear",
+            "enabled": true,
+            "rotation": 145,
+            "size": {
+              "height": 1
+            },
+            "colors": [
+              {
+                "color": "#FFFFFF",
+                "position": 0
+              },
+              {
+                "color": "#FFFFFF",
+                "position": 0.3
+              },
+              {
+                "color": "#B7C1C3",
+                "position": 1
+              }
+            ]
+          },
+          "strokeWidth": 1,
+          "effect": [
+            {
+              "type": "shadow",
+              "shadowType": "inner",
+              "color": "#FFFFFFFF",
+              "offset": {
+                "x": 0,
+                "y": 2
+              },
+              "blur": 3
+            },
+            {
+              "type": "shadow",
+              "shadowType": "inner",
+              "color": "#6B6E6E55",
+              "offset": {
+                "x": 0,
+                "y": -2
+              },
+              "blur": 4
+            }
+          ],
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon",
+              "id": "ZAFK7",
+              "name": "应用图标符号",
+              "width": 144,
+              "height": 144,
+              "icon": "panels-left-bottom",
+              "library": "lucide",
+              "fill": {
+                "type": "gradient",
+                "gradientType": "linear",
+                "enabled": true,
+                "rotation": 90,
+                "size": {
+                  "height": 1
+                },
+                "colors": [
+                  {
+                    "color": "#1C1F1F",
+                    "position": 0
+                  },
+                  {
+                    "color": "#4A4E4F",
+                    "position": 0.12
+                  },
+                  {
+                    "color": "#C3C6C5",
+                    "position": 0.28
+                  },
+                  {
+                    "color": "#EAECEB",
+                    "position": 0.42
+                  },
+                  {
+                    "color": "#898D8D",
+                    "position": 0.57
+                  },
+                  {
+                    "color": "#D1D4D3",
+                    "position": 0.76
+                  },
+                  {
+                    "color": "#424647",
+                    "position": 0.94
+                  },
+                  {
+                    "color": "#1A1C1D",
+                    "position": 1
+                  }
+                ]
+              },
+              "effect": [
+                {
+                  "type": "shadow",
+                  "shadowType": "outer",
+                  "color": "#1C202066",
+                  "offset": {
+                    "x": 1,
+                    "y": 3
+                  },
+                  "blur": 3
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "inner",
+                  "color": "#111414AA",
+                  "offset": {
+                    "x": 1,
+                    "y": 1
+                  },
+                  "blur": 1
+                },
+                {
+                  "type": "shadow",
+                  "shadowType": "inner",
+                  "color": "#FFFFFFFF",
+                  "offset": {
+                    "x": -1,
+                    "y": -1
+                  },
+                  "blur": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "B8Wsj",
+      "x": 336,
+      "y": 1000,
+      "name": "Switchboard · macOS 顶栏图标",
+      "width": 460,
+      "fill": "#F8FAF9",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "gap": 18,
+      "padding": 24,
+      "children": [
+        {
+          "type": "text",
+          "id": "g95y1Y",
+          "name": "顶栏图标标题",
+          "fill": "#243B32",
+          "content": "菜单栏图标",
+          "fontFamily": "Inter",
+          "fontSize": 17,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "oBPbb",
+          "name": "顶栏图标说明",
+          "fill": "#7C8D85",
+          "content": "18 × 18 pt · 单色模板 · 沿用应用分栏符号",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "frame",
+          "id": "IHmOT",
+          "name": "深色菜单栏",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "type": "text",
+              "id": "lSL7Y",
+              "name": "深色菜单栏标签",
+              "fill": "#8D9C94",
+              "content": "深色菜单栏",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "K94xH",
+              "name": "深色菜单栏效果",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "#20282D",
+              "cornerRadius": 6,
+              "gap": 18,
+              "padding": [
+                0,
+                16
+              ],
+              "justifyContent": "end",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "WCFC6",
+                  "name": "wifi",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "wifi",
+                  "library": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "icon",
+                  "id": "cAsVV",
+                  "name": "battery-full",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "battery-full",
+                  "library": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "frame",
+                  "id": "JSCir",
+                  "name": "Switchboard 点击区域",
+                  "width": 30,
+                  "height": 26,
+                  "fill": "#FFFFFF24",
+                  "cornerRadius": 5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mRbkP",
+                      "name": "Switchboard 单色符号",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "panels-left-bottom",
+                      "library": "lucide",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "GHrkQ",
+                  "name": "菜单栏时间",
+                  "fill": "#FFFFFF",
+                  "content": "10:24",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "e63A9",
+          "name": "浅色菜单栏",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "type": "text",
+              "id": "h0fD8",
+              "name": "浅色菜单栏标签",
+              "fill": "#8D9C94",
+              "content": "浅色菜单栏",
+              "fontFamily": "Inter",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "z1mV8g",
+              "name": "浅色菜单栏效果",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "#E7EBED",
+              "cornerRadius": 6,
+              "gap": 18,
+              "padding": [
+                0,
+                16
+              ],
+              "justifyContent": "end",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "eBR6B",
+                  "name": "wifi",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "wifi",
+                  "library": "lucide",
+                  "fill": "#20282D"
+                },
+                {
+                  "type": "icon",
+                  "id": "Sy4G4",
+                  "name": "battery-full",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "battery-full",
+                  "library": "lucide",
+                  "fill": "#20282D"
+                },
+                {
+                  "type": "frame",
+                  "id": "JxZFp",
+                  "name": "Switchboard 点击区域",
+                  "width": 30,
+                  "height": 26,
+                  "fill": "#0000000D",
+                  "cornerRadius": 5,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "uTeBA",
+                      "name": "Switchboard 单色符号",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "panels-left-bottom",
+                      "library": "lucide",
+                      "fill": "#20282D"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "v38IYG",
+                  "name": "菜单栏时间",
+                  "fill": "#20282D",
+                  "content": "10:24",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fileToken": "741602f8-ea0c-4072-98c9-31b560e4bcd7"
+}
