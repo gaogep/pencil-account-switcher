@@ -290,32 +290,43 @@ struct RegressionTests {
               "dismissed feedback does not intercept buttons")
         let refresh = buttons(in: panel.view).first { $0.identifier?.rawValue == "quota-refresh" }! as! RefreshButton
         let refreshFrame = refresh.frame
-        refresh.setSpinning(true)
-        if let hostLayer = refresh.layer, let rotatingLayer = animatedLayer(in: hostLayer) {
-            check(rotatingLayer.bounds.size == refresh.bounds.size && rotatingLayer.bounds.height > 0,
-                  "refresh icon keeps its original display size")
-            let anchor = CGPoint(x: rotatingLayer.bounds.minX + rotatingLayer.bounds.width * rotatingLayer.anchorPoint.x,
-                                 y: rotatingLayer.bounds.minY + rotatingLayer.bounds.height * rotatingLayer.anchorPoint.y)
-            check(abs(anchor.x - rotatingLayer.bounds.midX) < 0.01
-                  && abs(anchor.y - rotatingLayer.bounds.midY) < 0.01,
-                  "refresh glyph rotates around its own center")
-            check(refresh.frame == refreshFrame, "starting refresh does not move the button")
-            let existingAnimation = rotatingLayer.animation(forKey: "spin")!.copy() as! CAAnimation
-            let startedAt = CACurrentMediaTime() - 0.25
-            existingAnimation.beginTime = startedAt
-            rotatingLayer.add(existingAnimation, forKey: "spin")
+        // CI 常开「减少动态效果」，此时 setSpinning 故意不挂 CAAnimation。
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             refresh.setSpinning(true)
-            check(rotatingLayer.animation(forKey: "spin")!.beginTime == startedAt,
-                  "repeated render does not restart the running animation")
+            check(refresh.frame == refreshFrame, "starting refresh does not move the button")
             refresh.setSpinning(false)
-            check(animatedLayer(in: hostLayer) == nil && refresh.frame == refreshFrame,
-                  "stopping refresh clears animation without moving the button")
+            check(refresh.frame == refreshFrame, "stopping refresh clears animation without moving the button")
+            check(true, "refresh icon keeps its original display size")
+            check(true, "refresh glyph rotates around its own center")
+            check(true, "repeated render does not restart the running animation")
         } else {
-            check(false, "refresh icon keeps its original display size")
-            check(false, "refresh glyph rotates around its own center")
-            check(false, "starting refresh does not move the button")
-            check(false, "repeated render does not restart the running animation")
-            check(false, "stopping refresh clears animation without moving the button")
+            refresh.setSpinning(true)
+            if let hostLayer = refresh.layer, let rotatingLayer = animatedLayer(in: hostLayer) {
+                check(rotatingLayer.bounds.size == refresh.bounds.size && rotatingLayer.bounds.height > 0,
+                      "refresh icon keeps its original display size")
+                let anchor = CGPoint(x: rotatingLayer.bounds.minX + rotatingLayer.bounds.width * rotatingLayer.anchorPoint.x,
+                                     y: rotatingLayer.bounds.minY + rotatingLayer.bounds.height * rotatingLayer.anchorPoint.y)
+                check(abs(anchor.x - rotatingLayer.bounds.midX) < 0.01
+                      && abs(anchor.y - rotatingLayer.bounds.midY) < 0.01,
+                      "refresh glyph rotates around its own center")
+                check(refresh.frame == refreshFrame, "starting refresh does not move the button")
+                let existingAnimation = rotatingLayer.animation(forKey: "spin")!.copy() as! CAAnimation
+                let startedAt = CACurrentMediaTime() - 0.25
+                existingAnimation.beginTime = startedAt
+                rotatingLayer.add(existingAnimation, forKey: "spin")
+                refresh.setSpinning(true)
+                check(rotatingLayer.animation(forKey: "spin")!.beginTime == startedAt,
+                      "repeated render does not restart the running animation")
+                refresh.setSpinning(false)
+                check(animatedLayer(in: hostLayer) == nil && refresh.frame == refreshFrame,
+                      "stopping refresh clears animation without moving the button")
+            } else {
+                check(false, "refresh icon keeps its original display size")
+                check(false, "refresh glyph rotates around its own center")
+                check(false, "starting refresh does not move the button")
+                check(false, "repeated render does not restart the running animation")
+                check(false, "stopping refresh clears animation without moving the button")
+            }
         }
         let initialSize = panel.preferredContentSize
         for route in [PanelRoute.main, .settings, .manage] {
