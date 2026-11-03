@@ -3,7 +3,7 @@ import Foundation
 
 /// 目标软件登录态快照。当前只含会话文件；
 /// Pen 的供应商凭证（agent-auth）与 Pen 账号身份无关，刻意不入快照。
-struct TargetSnapshot: Codable {
+struct TargetSnapshot: Codable, Sendable {
     /// session-desktop.json 的原始内容
     var sessionFile: String
     /// 从会话文件解析出的邮箱（身份标识）

@@ -12,12 +12,28 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Check version matches tag
+        run: |
+          PLIST_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Support/Info.plist)
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PLIST_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Info.plist 版本 $PLIST_VERSION 与 tag $GITHUB_REF_NAME 不一致"
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" Support/Info.plist
+      - name: Regression tests
+        run: chmod +x Tests/run.sh && ./Tests/run.sh
       - name: Build DMG and zip
         run: chmod +x build.sh Support/make_dmg.sh && ./Support/make_dmg.sh
+      - name: Sign update zip
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: swift Support/sign_update.swift build/Pencil-Account-Switcher-*-arm64.zip
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             build/Pencil-Account-Switcher-*-arm64.dmg
             build/Pencil-Account-Switcher-*-arm64.zip
+            build/Pencil-Account-Switcher-*-arm64.zip.sig
           generate_release_notes: true

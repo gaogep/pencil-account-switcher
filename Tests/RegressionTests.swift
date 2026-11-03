@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import Foundation
 
 final class MemoryCredentials: CredentialStore {
@@ -23,6 +24,7 @@ final class FakeTarget: TargetAdapter {
     var launchCount = 0
     var failEmail: String?
     var refuseQuit = false
+    var launchError: Error?
     func liveIdentity() -> String? { session?.email }
     func captureSnapshot() throws -> TargetSnapshot {
         guard let session else { throw TargetAdapterError.notLoggedIn }
@@ -44,6 +46,7 @@ final class FakeTarget: TargetAdapter {
     }
     func launch() async throws {
         launchCount += 1
+        if let launchError { throw launchError }
         running = true
     }
 }
@@ -83,17 +86,39 @@ final class FakeWebLogin: WebLoginProvider {
 final class FakeFeed: ReleaseFeed {
     var release: AppRelease?
     var error: Error?
+    var calls = 0
     func fetchLatest() async throws -> AppRelease {
+        calls += 1
         if let error { throw error }
         guard let release else { throw URLError(.cannotParseResponse) }
         return release
     }
 }
 
+final class FixtureTransport: UpdateTransport {
+    var zip = Data()
+    var signature = ""
+    var downloads = 0
+    func downloadZip(_ url: URL, onProgress: @escaping (Int64, Int64) -> Void) async throws -> URL {
+        downloads += 1
+        let file = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Switchboard-\(UUID().uuidString).zip")
+        try zip.write(to: file)
+        onProgress(Int64(zip.count), Int64(zip.count))
+        return file
+    }
+    func downloadSignature(_ url: URL) async throws -> String { signature }
+}
+
 final class FakeInstaller: UpdateInstaller {
     var replaced = false
     var relaunched = false
-    func unpackZip(_ zipURL: URL) throws -> URL { zipURL }
+    var unpackCalled = false
+    var unpackResult: URL?
+    func unpackZip(_ zipURL: URL) throws -> URL {
+        unpackCalled = true
+        return unpackResult ?? zipURL
+    }
     func replace(current: URL, with newApp: URL) throws { replaced = true }
     func relaunch(at url: URL) { relaunched = true }
 }
@@ -118,7 +143,7 @@ struct RegressionTests {
             let credentials = MemoryCredentials()
             let quota = FakeQuota()
             quota.delayNanoseconds = 2_000_000_000
-            let model = AppModel(adapter: target, quota: quota, keychain: credentials,
+            let model = AppModel(adapter: target, quota: quota, credentials: credentials,
                                  storeURL: directory.appendingPathComponent("store.json"),
                                  softVerifyNanoseconds: 0)
             model.accounts = [AccountRecord(email: "a@example.test", isCurrent: true, authState: .ok),
@@ -158,7 +183,7 @@ struct RegressionTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let target = FakeTarget()
         let credentials = MemoryCredentials()
-        let model = AppModel(adapter: target, quota: UnsupportedQuotaProvider(), keychain: credentials,
+        let model = AppModel(adapter: target, quota: UnsupportedQuotaProvider(), credentials: credentials,
                              storeURL: directory.appendingPathComponent("store.json"),
                              softVerifyNanoseconds: 0)
         let a = AccountRecord(email: "a@example.test", isCurrent: true, authState: .ok)
@@ -203,7 +228,7 @@ struct RegressionTests {
         check(model.accounts.count == 2, "stale UI record cannot remove live current account")
 
         let quota = FakeQuota()
-        let quotaModel = AppModel(adapter: target, quota: quota, keychain: credentials,
+        let quotaModel = AppModel(adapter: target, quota: quota, credentials: credentials,
                                   storeURL: directory.appendingPathComponent("quota.json"),
                                   softVerifyNanoseconds: 0)
         quotaModel.accounts = [a, b]
@@ -265,26 +290,44 @@ struct RegressionTests {
               "dismissed feedback does not intercept buttons")
         let refresh = buttons(in: panel.view).first { $0.identifier?.rawValue == "quota-refresh" }! as! RefreshButton
         let refreshFrame = refresh.frame
-        refresh.setSpinning(true)
-        let rotatingLayer = animatedLayer(in: refresh.layer!)!
-        check(rotatingLayer.bounds.size == refresh.bounds.size && rotatingLayer.bounds.height > 0,
-              "refresh icon keeps its original display size")
-        let anchor = CGPoint(x: rotatingLayer.bounds.minX + rotatingLayer.bounds.width * rotatingLayer.anchorPoint.x,
-                             y: rotatingLayer.bounds.minY + rotatingLayer.bounds.height * rotatingLayer.anchorPoint.y)
-        check(abs(anchor.x - rotatingLayer.bounds.midX) < 0.01
-              && abs(anchor.y - rotatingLayer.bounds.midY) < 0.01,
-              "refresh glyph rotates around its own center")
-        check(refresh.frame == refreshFrame, "starting refresh does not move the button")
-        let existingAnimation = rotatingLayer.animation(forKey: "spin")!.copy() as! CAAnimation
-        let startedAt = CACurrentMediaTime() - 0.25
-        existingAnimation.beginTime = startedAt
-        rotatingLayer.add(existingAnimation, forKey: "spin")
-        refresh.setSpinning(true)
-        check(rotatingLayer.animation(forKey: "spin")!.beginTime == startedAt,
-              "repeated render does not restart the running animation")
-        refresh.setSpinning(false)
-        check(animatedLayer(in: refresh.layer!) == nil && refresh.frame == refreshFrame,
-              "stopping refresh clears animation without moving the button")
+        // CI 常开「减少动态效果」，此时 setSpinning 故意不挂 CAAnimation。
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            refresh.setSpinning(true)
+            check(refresh.frame == refreshFrame, "starting refresh does not move the button")
+            refresh.setSpinning(false)
+            check(refresh.frame == refreshFrame, "stopping refresh clears animation without moving the button")
+            check(true, "refresh icon keeps its original display size")
+            check(true, "refresh glyph rotates around its own center")
+            check(true, "repeated render does not restart the running animation")
+        } else {
+            refresh.setSpinning(true)
+            if let hostLayer = refresh.layer, let rotatingLayer = animatedLayer(in: hostLayer) {
+                check(rotatingLayer.bounds.size == refresh.bounds.size && rotatingLayer.bounds.height > 0,
+                      "refresh icon keeps its original display size")
+                let anchor = CGPoint(x: rotatingLayer.bounds.minX + rotatingLayer.bounds.width * rotatingLayer.anchorPoint.x,
+                                     y: rotatingLayer.bounds.minY + rotatingLayer.bounds.height * rotatingLayer.anchorPoint.y)
+                check(abs(anchor.x - rotatingLayer.bounds.midX) < 0.01
+                      && abs(anchor.y - rotatingLayer.bounds.midY) < 0.01,
+                      "refresh glyph rotates around its own center")
+                check(refresh.frame == refreshFrame, "starting refresh does not move the button")
+                let existingAnimation = rotatingLayer.animation(forKey: "spin")!.copy() as! CAAnimation
+                let startedAt = CACurrentMediaTime() - 0.25
+                existingAnimation.beginTime = startedAt
+                rotatingLayer.add(existingAnimation, forKey: "spin")
+                refresh.setSpinning(true)
+                check(rotatingLayer.animation(forKey: "spin")!.beginTime == startedAt,
+                      "repeated render does not restart the running animation")
+                refresh.setSpinning(false)
+                check(animatedLayer(in: hostLayer) == nil && refresh.frame == refreshFrame,
+                      "stopping refresh clears animation without moving the button")
+            } else {
+                check(false, "refresh icon keeps its original display size")
+                check(false, "refresh glyph rotates around its own center")
+                check(false, "starting refresh does not move the button")
+                check(false, "repeated render does not restart the running animation")
+                check(false, "stopping refresh clears animation without moving the button")
+            }
+        }
         let initialSize = panel.preferredContentSize
         for route in [PanelRoute.main, .settings, .manage] {
             model.route = route
@@ -403,7 +446,7 @@ struct RegressionTests {
         loginTarget.running = true
         let loginCredentials = MemoryCredentials()
         let loginModel = AppModel(adapter: loginTarget, quota: UnsupportedQuotaProvider(),
-                                  keychain: loginCredentials, storeURL: directory.appendingPathComponent("login.json"),
+                                  credentials: loginCredentials, storeURL: directory.appendingPathComponent("login.json"),
                                   webLogin: login, softVerifyNanoseconds: 0)
         loginModel.accounts = [a]
         loginModel.addAccount(window: window)
@@ -438,7 +481,7 @@ struct RegressionTests {
         let corruptURL = directory.appendingPathComponent("broken.json")
         try! Data("{".utf8).write(to: corruptURL)
         let broken = AppModel(adapter: FakeTarget(), quota: UnsupportedQuotaProvider(),
-                              keychain: MemoryCredentials(), storeURL: corruptURL,
+                              credentials: MemoryCredentials(), storeURL: corruptURL,
                               softVerifyNanoseconds: 0)
         broken.accounts = [AccountRecord(email: "kept@example.test")]
         check(try! Data(contentsOf: corruptURL) == Data("{".utf8), "corrupt store is not overwritten")
@@ -455,7 +498,7 @@ struct RegressionTests {
         let caseTarget = FakeTarget()
         caseTarget.session = snapshot("A@example.test")
         let caseModel = AppModel(adapter: caseTarget, quota: UnsupportedQuotaProvider(),
-                                 keychain: MemoryCredentials(),
+                                 credentials: MemoryCredentials(),
                                  storeURL: directory.appendingPathComponent("case.json"),
                                  softVerifyNanoseconds: 0)
         caseModel.accounts = [AccountRecord(email: "a@example.test")]
@@ -471,7 +514,7 @@ struct RegressionTests {
         timeoutTarget.refuseQuit = true
         let timeoutCredentials = MemoryCredentials()
         let timeoutModel = AppModel(adapter: timeoutTarget, quota: UnsupportedQuotaProvider(),
-                                    keychain: timeoutCredentials,
+                                    credentials: timeoutCredentials,
                                     storeURL: directory.appendingPathComponent("timeout.json"),
                                     softVerifyNanoseconds: 0)
         timeoutModel.accounts = [a, b]
@@ -486,7 +529,7 @@ struct RegressionTests {
         verifyTarget.running = true
         let verifyCredentials = MemoryCredentials()
         let verifyModel = AppModel(adapter: verifyTarget, quota: UnsupportedQuotaProvider(),
-                                   keychain: verifyCredentials,
+                                   credentials: verifyCredentials,
                                    storeURL: directory.appendingPathComponent("verify.json"),
                                    softVerifyNanoseconds: 80_000_000)
         verifyModel.accounts = [a, b]
@@ -521,7 +564,7 @@ struct RegressionTests {
 
         let persistURL = directory.appendingPathComponent("persist.json")
         let persistModel = AppModel(adapter: FakeTarget(), quota: UnsupportedQuotaProvider(),
-                                    keychain: MemoryCredentials(), storeURL: persistURL,
+                                    credentials: MemoryCredentials(), storeURL: persistURL,
                                     softVerifyNanoseconds: 0)
         persistModel.accounts = [a]
         persistModel.accounts[0].plan = "once"
@@ -569,6 +612,8 @@ struct RegressionTests {
         check(UpdateVersion.zipAsset(from: ["notes.txt", "Pencil-Account-Switcher-1.1.0-arm64.zip"])
                 == "Pencil-Account-Switcher-1.1.0-arm64.zip",
               "arm64 zip is preferred")
+        check(UpdateVersion.zipAsset(from: ["Pencil-Account-Switcher-1.1.0.zip", "app.dmg"]) == nil,
+              "non-arm64 zip is rejected")
         check(UpdateVersion.formatBytes(1_800_000).contains("MB"), "byte formatter uses megabytes")
 
         let feed = FakeFeed()
@@ -577,7 +622,7 @@ struct RegressionTests {
                                   pageURL: URL(string: "https://example.test/rel")!)
         let updateDefaults = UserDefaults(suiteName: UUID().uuidString)!
         let installer = FakeInstaller()
-        let updateModel = AppModel(adapter: target, quota: UnsupportedQuotaProvider(), keychain: credentials,
+        let updateModel = AppModel(adapter: target, quota: UnsupportedQuotaProvider(), credentials: credentials,
                                    storeURL: directory.appendingPathComponent("update.json"),
                                    softVerifyNanoseconds: 0, updateFeed: feed, updateInstaller: installer,
                                    currentVersion: "1.0.0", defaults: updateDefaults)
@@ -600,7 +645,7 @@ struct RegressionTests {
         feed.release = AppRelease(version: "1.0.0",
                                   zipURL: URL(string: "https://example.test/app.zip")!,
                                   pageURL: URL(string: "https://example.test/rel")!)
-        let sameModel = AppModel(adapter: target, quota: UnsupportedQuotaProvider(), keychain: credentials,
+        let sameModel = AppModel(adapter: target, quota: UnsupportedQuotaProvider(), credentials: credentials,
                                  storeURL: directory.appendingPathComponent("same.json"),
                                  softVerifyNanoseconds: 0, updateFeed: feed, updateInstaller: installer,
                                  currentVersion: "1.0.0", defaults: UserDefaults(suiteName: UUID().uuidString)!)
@@ -609,7 +654,254 @@ struct RegressionTests {
         if case .idle = sameModel.updateState { check(true, "same version stays idle") }
         else { check(false, "same version stays idle") }
 
+        // 前面空状态用例清空了 accounts；这里恢复后再验切换按钮。
+        target.session = snapshot(a.email)
+        model.accounts = [a, b]
+        model.syncCurrentIdentity()
+        model.updateState = .idle
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        panel.view.layoutSubtreeIfNeeded()
+        let switchButton = buttons(in: panel.view).compactMap { $0 as? AccountActionButton }
+            .first { $0.identifier?.rawValue == ButtonID.switchAccount }
+        check(switchButton?.accountID != nil, "switch button keeps a stable identifier and account id")
+        let addButton = buttons(in: panel.view).first { $0.title == "添加账号" }
+        check(addButton?.identifier?.rawValue == ButtonID.addAccount, "add button uses a stable identifier")
+
+        await checkSignedUpdates(directory: directory, window: window)
+        await checkLockedStore(directory: directory, window: window)
+        await checkLaunchFailure(directory: directory, accounts: (a, b))
+        await checkBusyRemove(directory: directory, accounts: (a, b))
+        await checkUpdateBackoff(directory: directory)
+
         window.orderOut(nil)
+    }
+
+    @MainActor static func checkSignedUpdates(directory: URL, window: NSWindow) async {
+        let signingKey = Curve25519.Signing.PrivateKey()
+        let zipBytes = Data("signed-update-zip".utf8)
+        let goodSig = try! signingKey.signature(for: zipBytes).base64EncodedString()
+        let publicKey = signingKey.publicKey.rawRepresentation
+        let otherKey = Curve25519.Signing.PrivateKey().publicKey.rawRepresentation
+
+        func makeApp(bundleID: String, version: String) throws -> URL {
+            let app = directory.appendingPathComponent("Switchboard-\(UUID().uuidString).app")
+            let contents = app.appendingPathComponent("Contents", isDirectory: true)
+            try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+            let plist = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0"><dict>
+            <key>CFBundleIdentifier</key><string>\(bundleID)</string>
+            <key>CFBundleExecutable</key><string>Switchboard</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>\(version)</string>
+            </dict></plist>
+            """
+            try plist.write(to: contents.appendingPathComponent("Info.plist"), atomically: true, encoding: .utf8)
+            return app
+        }
+
+        func attempt(signatureURL: URL?, signature: String, publicKey: Data, app: URL?) async -> AppModel {
+            let transport = FixtureTransport()
+            transport.zip = zipBytes
+            transport.signature = signature
+            let installer = FakeInstaller()
+            installer.unpackResult = app
+            let release = AppRelease(version: "1.2.0",
+                                     zipURL: URL(string: "https://example.test/app.zip")!,
+                                     pageURL: URL(string: "https://example.test/rel")!,
+                                     signatureURL: signatureURL)
+            let model = AppModel(adapter: FakeTarget(), quota: UnsupportedQuotaProvider(),
+                                 credentials: MemoryCredentials(),
+                                 storeURL: directory.appendingPathComponent("sig-\(UUID().uuidString).json"),
+                                 softVerifyNanoseconds: 0,
+                                 updateFeed: FakeFeed(), updateInstaller: installer, updateTransport: transport,
+                                 updatePublicKey: publicKey, currentVersion: "1.0.0",
+                                 defaults: UserDefaults(suiteName: UUID().uuidString)!)
+            model.updateState = .available(release, silenced: false)
+            model.startUpdate()
+            for _ in 0..<50 {
+                if case .downloading = model.updateState {
+                    try? await Task.sleep(nanoseconds: 10_000_000)
+                    continue
+                }
+                break
+            }
+            check(!installer.unpackCalled || app != nil, "unpack only runs after a signature is accepted")
+            if signatureURL == nil || app == nil || publicKey != signingKey.publicKey.rawRepresentation {
+                check(!installer.unpackCalled, "rejected update does not unpack")
+            }
+            return model
+        }
+
+        let missing = await attempt(signatureURL: nil, signature: goodSig, publicKey: publicKey, app: nil)
+        check(missing.feedback?.contains("发布缺少签名文件") == true, "missing signature file is rejected")
+        if case .ready = missing.updateState { check(false, "missing signature does not become ready") }
+        else { check(true, "missing signature does not become ready") }
+
+        let bad = await attempt(signatureURL: URL(string: "https://example.test/app.zip.sig"),
+                                signature: "aaaa", publicKey: publicKey, app: nil)
+        check(bad.feedback?.contains("签名校验失败") == true, "bad signature is rejected")
+        if case .ready = bad.updateState { check(false, "bad signature does not become ready") }
+        else { check(true, "bad signature does not become ready") }
+
+        let wrongKey = await attempt(signatureURL: URL(string: "https://example.test/app.zip.sig"),
+                                     signature: goodSig, publicKey: otherKey, app: nil)
+        check(wrongKey.feedback?.contains("签名校验失败") == true, "signature from another key is rejected")
+
+        let wrongBundle = try! makeApp(bundleID: "dev.example.Other", version: "1.2.0")
+        let bundleMismatch = await attempt(signatureURL: URL(string: "https://example.test/app.zip.sig"),
+                                           signature: goodSig, publicKey: publicKey, app: wrongBundle)
+        check(bundleMismatch.feedback?.contains("更新包内容与发布版本不符") == true,
+              "wrong bundle id is rejected")
+        if case .ready = bundleMismatch.updateState { check(false, "wrong bundle id does not become ready") }
+        else { check(true, "wrong bundle id does not become ready") }
+
+        let wrongVersion = try! makeApp(bundleID: UpdateVerifier.expectedBundleID, version: "9.9.9")
+        let versionMismatch = await attempt(signatureURL: URL(string: "https://example.test/app.zip.sig"),
+                                            signature: goodSig, publicKey: publicKey, app: wrongVersion)
+        check(versionMismatch.feedback?.contains("更新包内容与发布版本不符") == true,
+              "wrong bundle version is rejected")
+        if case .ready = versionMismatch.updateState { check(false, "wrong bundle version does not become ready") }
+        else { check(true, "wrong bundle version does not become ready") }
+
+        let goodApp = try! makeApp(bundleID: UpdateVerifier.expectedBundleID, version: "1.2.0")
+        let accepted = await attempt(signatureURL: URL(string: "https://example.test/app.zip.sig"),
+                                     signature: goodSig, publicKey: publicKey, app: goodApp)
+        if case .ready(let release, _) = accepted.updateState {
+            check(release.version == "1.2.0", "signed matching bundle becomes ready")
+        } else {
+            check(false, "signed matching bundle becomes ready")
+        }
+        _ = window
+    }
+
+    @MainActor static func checkLockedStore(directory: URL, window: NSWindow) async {
+        let lockedDir = directory.appendingPathComponent("locked-creds")
+        let lockedStore = FileCredentialStore(directoryURL: lockedDir)
+        let keptID = UUID()
+        try! lockedStore.save(Data("keep".utf8), account: keptID.uuidString)
+        let namesBefore = try! FileManager.default.contentsOfDirectory(at: lockedDir, includingPropertiesForKeys: nil)
+            .map(\.lastPathComponent).sorted()
+        let lockedURL = directory.appendingPathComponent("locked-store.json")
+        try! Data("{".utf8).write(to: lockedURL)
+        let lockedTarget = FakeTarget()
+        lockedTarget.session = snapshot("fresh@example.test")
+        let locked = AppModel(adapter: lockedTarget, quota: UnsupportedQuotaProvider(),
+                              credentials: lockedStore, storeURL: lockedURL, softVerifyNanoseconds: 0)
+        check(locked.persistenceBlocked, "corrupt store blocks persistence")
+        locked.importCurrentLogin()
+        check(locked.feedback?.contains("账号列表文件异常") == true, "locked import explains itself")
+        let afterImport = try! FileManager.default.contentsOfDirectory(at: lockedDir, includingPropertiesForKeys: nil)
+            .map(\.lastPathComponent).sorted()
+        check(afterImport == namesBefore, "locked import writes no credential file")
+        locked.addAccount(window: window)
+        check(!locked.addingAccount, "locked add does not start web login")
+        check(locked.feedback?.contains("账号列表文件异常") == true, "locked add explains itself")
+        let afterAdd = try! FileManager.default.contentsOfDirectory(at: lockedDir, includingPropertiesForKeys: nil)
+            .map(\.lastPathComponent).sorted()
+        check(afterAdd == namesBefore, "locked add writes no credential file")
+        let current = AccountRecord(email: "cur@example.test", isCurrent: true)
+        let extra = AccountRecord(id: keptID, email: "extra@example.test")
+        locked.accounts = [current, extra]
+        locked.remove(extra)
+        check(locked.accounts.count == 2, "locked remove keeps the account")
+        check((try? lockedStore.load(account: keptID.uuidString)) == Data("keep".utf8),
+              "locked remove keeps the credential file")
+        locked.route = .manage
+        let lockedPanel = PanelController(model: locked)
+        let lockedWindow = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 410, height: 450),
+                                    styleMask: .borderless, backing: .buffered, defer: false)
+        lockedWindow.contentViewController = lockedPanel
+        lockedPanel.view.layoutSubtreeIfNeeded()
+        let removeButtons = buttons(in: lockedPanel.view).filter { $0.title == "移除" }
+        check(!removeButtons.isEmpty && removeButtons.allSatisfy { !$0.isEnabled },
+              "locked store disables remove")
+        let importFallback = buttons(in: lockedPanel.view).first { $0.identifier?.rawValue == ButtonID.importCurrent }
+        check(importFallback?.isEnabled == false, "locked store disables import")
+        locked.route = .main
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        lockedPanel.view.layoutSubtreeIfNeeded()
+        let add = buttons(in: lockedPanel.view).first { $0.title == "添加账号" }
+        check(add?.isEnabled == false && add?.identifier?.rawValue == ButtonID.addAccount,
+              "locked store disables add")
+        lockedWindow.orderOut(nil)
+    }
+
+    @MainActor static func checkLaunchFailure(directory: URL, accounts: (AccountRecord, AccountRecord)) async {
+        let (a, b) = accounts
+        let launchTarget = FakeTarget()
+        launchTarget.session = snapshot(a.email)
+        launchTarget.running = true
+        launchTarget.launchError = TargetAdapterError.applicationMissing
+        let launchCredentials = MemoryCredentials()
+        let launchModel = AppModel(adapter: launchTarget, quota: UnsupportedQuotaProvider(),
+                                   credentials: launchCredentials,
+                                   storeURL: directory.appendingPathComponent("launch.json"),
+                                   softVerifyNanoseconds: 40_000_000)
+        launchModel.accounts = [a, b]
+        try! launchCredentials.save(JSONEncoder().encode(snapshot(b.email)), account: b.id.uuidString)
+        let outcome = await launchModel.switchTo(b)
+        check(outcome == .completed, "launch failure still completes the switch")
+        check(launchModel.currentAccount?.id == b.id, "launch failure keeps the switched account current")
+        check(launchModel.feedbackKind == .warning && launchModel.feedback?.contains("请手动打开") == true,
+              "launch failure asks the user to open Pen")
+        launchTarget.session = snapshot("hijacked@example.test")
+        try? await Task.sleep(nanoseconds: 120_000_000)
+        check(launchModel.feedback?.contains("请手动打开") == true,
+              "failed launch does not schedule soft verify")
+    }
+
+    @MainActor static func checkBusyRemove(directory: URL, accounts: (AccountRecord, AccountRecord)) async {
+        let (a, b) = accounts
+        let busyTarget = FakeTarget()
+        busyTarget.session = nil
+        let busyQuota = FakeQuota()
+        busyQuota.delayNanoseconds = 300_000_000
+        let busyCredentials = MemoryCredentials()
+        let busyModel = AppModel(adapter: busyTarget, quota: busyQuota,
+                                 credentials: busyCredentials,
+                                 storeURL: directory.appendingPathComponent("busy.json"),
+                                 softVerifyNanoseconds: 0)
+        busyModel.accounts = [a, b]
+        try! busyCredentials.save(JSONEncoder().encode(snapshot(a.email)), account: a.id.uuidString)
+        try! busyCredentials.save(JSONEncoder().encode(snapshot(b.email)), account: b.id.uuidString)
+        Task { await busyModel.refreshAllQuotas() }
+        for _ in 0..<50 where !busyModel.refreshing {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        check(busyModel.refreshing, "refresh is in progress")
+        busyModel.remove(b)
+        check(busyModel.accounts.contains { $0.id == b.id }, "busy remove does not delete the account")
+        check(busyModel.feedback?.contains("有操作正在进行") == true, "busy remove explains itself")
+        for _ in 0..<80 where busyModel.refreshing {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+    }
+
+    @MainActor static func checkUpdateBackoff(directory: URL) async {
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let feed = FakeFeed()
+        feed.error = URLError(.notConnectedToInternet)
+        let model = AppModel(adapter: FakeTarget(), quota: UnsupportedQuotaProvider(),
+                             credentials: MemoryCredentials(),
+                             storeURL: directory.appendingPathComponent("backoff.json"),
+                             softVerifyNanoseconds: 0, updateFeed: feed,
+                             currentVersion: "1.0.0", defaults: defaults)
+        model.checkForUpdates(force: false)
+        for _ in 0..<40 where feed.calls == 0 {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        check(feed.calls == 1, "automatic check records an attempt")
+        let calls = feed.calls
+        model.checkForUpdates(force: false)
+        try? await Task.sleep(nanoseconds: 80_000_000)
+        check(feed.calls == calls, "failed update check backs off for an hour")
+        model.checkForUpdates(force: true)
+        for _ in 0..<40 where feed.calls == calls {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        check(feed.calls == calls + 1, "forced check ignores the backoff")
     }
 
     @MainActor static func waitForLogin(_ model: AppModel) async {

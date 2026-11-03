@@ -47,12 +47,12 @@ final class AppModel: ObservableObject {
 
     let adapter: TargetAdapter
     let quota: QuotaProvider
-    private let keychain: CredentialStore
+    private let credentials: CredentialStore
     private let storeURL: URL
     private var feedbackTask: Task<Void, Never>?
     private var didSyncPersistence = false
     /// store.json 损坏或版本过新时禁止落盘，避免用空列表覆盖原文件。
-    private var persistenceBlocked = false
+    private(set) var persistenceBlocked = false
     private var pendingNotice: String?
     private var persistGeneration = 0
     private var verifyTask: Task<Void, Never>?
@@ -60,24 +60,29 @@ final class AppModel: ObservableObject {
     private let softVerifyNanoseconds: UInt64
     private let updateFeed: ReleaseFeed?
     private let updateInstaller: UpdateInstaller
+    private let updateTransport: UpdateTransport
+    private let updatePublicKey: Data?
     private let currentVersion: String
     private let defaults: UserDefaults
 
     private var demoMode = false
 
     init(adapter: TargetAdapter = PenTargetAdapter(), quota: QuotaProvider = PenQuotaProvider(),
-         keychain: CredentialStore = FileCredentialStore(), storeURL: URL? = nil, webLogin: WebLoginProvider? = nil,
+         credentials: CredentialStore = FileCredentialStore(), storeURL: URL? = nil, webLogin: WebLoginProvider? = nil,
          softVerifyNanoseconds: UInt64 = 4_000_000_000,
          updateFeed: ReleaseFeed? = nil, updateInstaller: UpdateInstaller? = nil,
+         updateTransport: UpdateTransport? = nil, updatePublicKey: Data? = nil,
          currentVersion: String? = nil, defaults: UserDefaults = .standard) {
         self.webLogin = webLogin ?? PenWebLogin()
         self.adapter = adapter
         self.quota = quota
-        self.keychain = keychain
+        self.credentials = credentials
         self.softVerifyNanoseconds = softVerifyNanoseconds
         self.updateFeed = updateFeed ?? GitHubReleaseFeed(
             repo: Bundle.main.object(forInfoDictionaryKey: "SBGitHubRepo") as? String ?? "")
         self.updateInstaller = updateInstaller ?? FileUpdateInstaller()
+        self.updateTransport = updateTransport ?? SessionUpdateTransport()
+        self.updatePublicKey = updatePublicKey
         self.currentVersion = currentVersion
             ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
             ?? "1.0.0"
@@ -148,6 +153,13 @@ final class AppModel: ObservableObject {
         pendingNotice = notice
     }
 
+    /// store.json 无法安全写入时，禁止任何会改账号列表的操作。
+    private func ensureWritable() -> Bool {
+        guard persistenceBlocked else { return true }
+        showFeedback("账号列表文件异常，暂不能修改账号列表。请检查 store.json 后重启应用", kind: .warning)
+        return false
+    }
+
     private func persist() {
         guard didSyncPersistence, !persistenceBlocked else { return }
         persistGeneration += 1
@@ -211,6 +223,7 @@ final class AppModel: ObservableObject {
     func addAccount(window: NSWindow) {
         guard !demoMode else { showFeedback("演示模式不操作真实账号", kind: .warning); return }
         if addingAccount { cancelAddingAccount(); return }
+        guard ensureWritable() else { return }
         guard switchingTo == nil, !refreshing else { return }
         addingAccount = true
         showFeedback("请在网页登录要添加的账号", kind: .loading, persistent: true)
@@ -267,6 +280,7 @@ final class AppModel: ObservableObject {
     func importCurrentLogin() {
         guard !addingAccount, switchingTo == nil, !refreshing else { return }
         guard !demoMode else { showFeedback("演示模式不操作真实账号", kind: .warning); return }
+        guard ensureWritable() else { return }
         do {
             let snapshot = try adapter.captureSnapshot()
             if let idx = accounts.firstIndex(where: { emailsMatch($0.email, snapshot.email) }) {
@@ -362,8 +376,11 @@ final class AppModel: ObservableObject {
                 }
                 throw switchError
             }
-            // 4. 之前在运行就重新拉起。文件身份已在 applySnapshot 里对过。
-            if willRelaunch { try await adapter.launch() }
+            // 4. 之前在运行就重新拉起。会话已经写入，拉起失败不能再报成“切换失败”。
+            var launchError: Error?
+            if willRelaunch {
+                do { try await adapter.launch() } catch { launchError = error }
+            }
             syncCurrentIdentity()
             guard let liveEmail, emailsMatch(liveEmail, target.email) else {
                 throw TargetAdapterError.verifyFailed(expected: target.email, actual: liveEmail)
@@ -374,8 +391,13 @@ final class AppModel: ObservableObject {
                     list[idx].lastError = nil
                 }
             }
-            showFeedback("已切换到 \(target.email)", kind: .success)
-            if willRelaunch { scheduleSoftVerify(expected: target.email) }
+            if let launchError {
+                showFeedback("已切换到 \(target.email)，但 Pen 启动失败，请手动打开：\(launchError.localizedDescription)",
+                             kind: .warning)
+            } else {
+                showFeedback("已切换到 \(target.email)", kind: .success)
+                if willRelaunch { scheduleSoftVerify(expected: target.email) }
+            }
             return .completed
         } catch {
             syncCurrentIdentity()
@@ -387,12 +409,16 @@ final class AppModel: ObservableObject {
     // MARK: - 移除账号
 
     func remove(_ record: AccountRecord) {
-        guard !addingAccount, switchingTo == nil, !refreshing else { return }
+        guard !addingAccount, switchingTo == nil, !refreshing else {
+            showFeedback("有操作正在进行，请稍后再移除", kind: .warning)
+            return
+        }
         guard !demoMode else { showFeedback("演示模式不操作真实账号", kind: .warning); return }
+        guard ensureWritable() else { return }
         syncCurrentIdentity()
         guard let record = accounts.first(where: { $0.id == record.id }), !record.isCurrent else { return }
         do {
-            try keychain.delete(account: record.id.uuidString)
+            try credentials.delete(account: record.id.uuidString)
             accounts.removeAll { $0.id == record.id }
             flushPersist()
             showFeedback("已移除 \(record.email)", kind: .success)
@@ -429,28 +455,63 @@ final class AppModel: ObservableObject {
             refreshing = false
             flushPersist()
         }
-        var failures = 0
+        // 刷新期间账号列表可能被同步修改，请求用开跑前的快照，返回后按 id 写回。
+        enum PreparedQuota: Sendable {
+            case snapshot(TargetSnapshot)
+            case expired
+            case failed(String)
+        }
+        var jobs: [(UUID, PreparedQuota)] = []
         for record in accounts {
-            let result: QuotaResult
-            do {
-                // 当前账号直接读实时会话（token 可能已轮换），并回存快照；
-                // 其他账号用本地凭据文件里的快照
-                let snapshot: TargetSnapshot
-                if let live = try? adapter.captureSnapshot(), emailsMatch(live.email, record.email) {
-                    try? saveSnapshot(live, for: record.id)
-                    snapshot = live
-                } else {
-                    snapshot = try loadSnapshot(for: record.id)
+            if let live = try? adapter.captureSnapshot(), emailsMatch(live.email, record.email) {
+                try? saveSnapshot(live, for: record.id)
+                jobs.append((record.id, .snapshot(live)))
+            } else {
+                do {
+                    jobs.append((record.id, .snapshot(try loadSnapshot(for: record.id))))
+                } catch TargetAdapterError.snapshotNotFound {
+                    jobs.append((record.id, .expired))
+                } catch {
+                    jobs.append((record.id, .failed(error.localizedDescription)))
                 }
-                result = await quota.fetchQuota(snapshot: snapshot)
-            } catch TargetAdapterError.snapshotNotFound {
-                result = .expired
-            } catch {
-                result = .failure(error.localizedDescription)
             }
-            // 网络请求期间允许移除账号，返回后必须按 id 重新查找位置。
+        }
+        let provider = quota
+        let results: [UUID: QuotaResult] = await withTaskGroup(
+            of: (UUID, QuotaResult).self,
+            returning: [UUID: QuotaResult].self
+        ) { group in
+            var iterator = jobs.makeIterator()
+            func addNext() -> Bool {
+                guard let (id, prepared) = iterator.next() else { return false }
+                group.addTask { @MainActor in
+                    let result: QuotaResult
+                    switch prepared {
+                    case .snapshot(let snapshot):
+                        result = await provider.fetchQuota(snapshot: snapshot)
+                    case .expired:
+                        result = .expired
+                    case .failed(let message):
+                        result = .failure(message)
+                    }
+                    return (id, result)
+                }
+                return true
+            }
+            for _ in 0..<3 {
+                if !addNext() { break }
+            }
+            var out: [UUID: QuotaResult] = [:]
+            for await (id, result) in group {
+                out[id] = result
+                _ = addNext()
+            }
+            return out
+        }
+        var failures = 0
+        for (id, result) in results {
             mutateAccounts { list in
-                guard let idx = list.firstIndex(where: { $0.id == record.id }) else { return }
+                guard let idx = list.firstIndex(where: { $0.id == id }) else { return }
                 switch result {
                 case .quota(let used, let total, let plan):
                     list[idx].usedDays = used
@@ -510,13 +571,13 @@ final class AppModel: ObservableObject {
 
     private func saveSnapshot(_ snapshot: TargetSnapshot, for id: UUID) throws {
         let data = try JSONEncoder().encode(snapshot)
-        try keychain.save(data, account: id.uuidString)
+        try credentials.save(data, account: id.uuidString)
     }
 
     private func loadSnapshot(for id: UUID) throws -> TargetSnapshot {
         let data: Data
         do {
-            data = try keychain.load(account: id.uuidString)
+            data = try credentials.load(account: id.uuidString)
         } catch let error as CredentialError {
             switch error {
             case .notFound, .invalidAccount:
@@ -583,9 +644,13 @@ final class AppModel: ObservableObject {
         guard let feed = updateFeed, !feedRepoMissing else { return }
         if updateState.isBusy { return }
         if !force {
-            let last = defaults.object(forKey: "SBLastUpdateCheck") as? Date ?? .distantPast
-            if Date().timeIntervalSince(last) < 24 * 60 * 60 { return }
+            let lastOK = defaults.object(forKey: "SBLastUpdateCheck") as? Date ?? .distantPast
+            let lastTry = defaults.object(forKey: "SBLastUpdateAttempt") as? Date ?? .distantPast
+            if Date().timeIntervalSince(lastOK) < 24 * 3600 || Date().timeIntervalSince(lastTry) < 3600 {
+                return
+            }
         }
+        defaults.set(Date(), forKey: "SBLastUpdateAttempt")
         updateTask?.cancel()
         updateTask = Task { [weak self] in
             guard let self else { return }
@@ -614,24 +679,39 @@ final class AppModel: ObservableObject {
         guard case .available(let release, _) = updateState else { return }
         updateTask?.cancel()
         updateState = .downloading(release, percent: 0, received: 0, total: nil)
+        let transport = updateTransport
+        let installer = updateInstaller
+        let publicKey = updatePublicKey
         updateTask = Task { [weak self] in
             guard let self else { return }
-            let download = DownloadTask()
-            download.onProgress = { received, total in
-                let percent = total > 0 ? Int((Double(received) / Double(total)) * 100) : 0
-                Task { @MainActor in
-                    guard case .downloading(let current, let oldPercent, _, _) = self.updateState,
-                          current == release else { return }
-                    guard percent != oldPercent || total <= 0 else { return }
-                    self.updateState = .downloading(release, percent: min(100, percent),
-                                                    received: received,
-                                                    total: total > 0 ? total : nil)
-                }
-            }
             do {
-                let zip = try await download.download(release.zipURL)
+                guard let sigURL = release.signatureURL else {
+                    throw UpdateVerifier.updateError("发布缺少签名文件")
+                }
+                let key = try UpdateVerifier.publicKey(from: publicKey)
+                let zip = try await transport.downloadZip(release.zipURL) { [weak self] received, total in
+                    let percent = total > 0 ? Int((Double(received) / Double(total)) * 100) : 0
+                    Task { @MainActor in
+                        guard let self else { return }
+                        guard case .downloading(let current, let oldPercent, _, _) = self.updateState,
+                              current == release else { return }
+                        guard percent != oldPercent || total <= 0 else { return }
+                        self.updateState = .downloading(release, percent: min(100, percent),
+                                                        received: received,
+                                                        total: total > 0 ? total : nil)
+                    }
+                }
+                defer { try? FileManager.default.removeItem(at: zip) }
                 try Task.checkCancellation()
-                let unpacked = try self.updateInstaller.unpackZip(zip)
+                let signature = try await transport.downloadSignature(sigURL)
+                try UpdateVerifier.verifySignature(zip: zip, signatureBase64: signature, key: key)
+                let unpacked = try installer.unpackZip(zip)
+                do {
+                    try UpdateVerifier.verifyBundle(unpacked, expectedVersion: release.version)
+                } catch {
+                    try? FileManager.default.removeItem(at: unpacked.deletingLastPathComponent())
+                    throw error
+                }
                 self.updateState = .ready(release, unpackedApp: unpacked)
             } catch is CancellationError {
                 self.updateState = .available(release, silenced: false)
@@ -653,6 +733,7 @@ final class AppModel: ObservableObject {
         do {
             let current = Bundle.main.bundleURL
             try updateInstaller.replace(current: current, with: unpacked)
+            try? FileManager.default.removeItem(at: unpacked.deletingLastPathComponent())
             updateInstaller.relaunch(at: current)
             NSApp.terminate(nil)
         } catch {

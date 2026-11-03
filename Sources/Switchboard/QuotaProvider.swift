@@ -2,7 +2,7 @@ import CryptoKit
 import Darwin
 import Foundation
 
-enum QuotaResult {
+enum QuotaResult: Sendable {
     case quota(used: Int, total: Int, plan: String?)
     /// 额度不计量/数据缺失：界面显示「— / — 天」，不伪造数据
     case unsupported

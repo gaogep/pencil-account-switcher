@@ -177,13 +177,38 @@ func makeAuthBadge(_ state: AuthState) -> NSView {
     return wrap
 }
 
+enum ButtonID {
+    static let switchAccount = "op-switch"
+    static let addAccount = "op-add"
+    static let reimport = "op-reimport"
+    static let cancelLogin = "op-cancel-login"
+    static let removeAccount = "op-remove"
+    static let importLive = "op-import-live"
+    static let importCurrent = "op-import-current"
+}
+
+/// 切换和移除按钮把账号 id 放在属性里，identifier 留给操作类别。
+final class AccountActionButton: NSButton {
+    var accountID: UUID?
+}
+
 /// 轻量小按钮：浅底圆角 + 文字 + 可选图标（图标尺寸随字号）
 func makePillButton(_ title: String, symbol: String? = nil, iconLeading: Bool = false,
                     bg: NSColor, textColor: NSColor,
                     action: Selector, target: Any, font: NSFont = .systemFont(ofSize: 11, weight: .semibold),
                     insets: NSEdgeInsets = NSEdgeInsets(top: 6, left: 8, bottom: 6, right: 8),
-                    radius: CGFloat = 6) -> NSView {
-    let button = NSButton(title: title, target: target, action: action)
+                    radius: CGFloat = 6, identifier: String? = nil, accountID: UUID? = nil) -> NSView {
+    let button: NSButton
+    if accountID != nil {
+        let accountButton = AccountActionButton(title: title, target: target, action: action)
+        accountButton.accountID = accountID
+        button = accountButton
+    } else {
+        button = NSButton(title: title, target: target, action: action)
+    }
+    if let identifier {
+        button.identifier = NSUserInterfaceItemIdentifier(identifier)
+    }
     button.isBordered = false
     button.font = font
     button.contentTintColor = textColor
@@ -415,6 +440,8 @@ final class RefreshButton: NSButton {
         setAccessibilityLabel("刷新额度")
         focusRingType = .exterior
         wantsLayer = true
+        // CI / 无显示器环境下 wantsLayer 不会立刻建层，这里显式挂上，避免图标动画和测试空解包。
+        if layer == nil { layer = CALayer() }
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         iconLayer.contentsScale = scale
         iconLayer.contents = tintedIcon.layerContents(forContentsScale: scale)
