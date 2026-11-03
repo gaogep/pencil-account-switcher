@@ -156,7 +156,7 @@ final class AppModel: ObservableObject {
     /// store.json 无法安全写入时，禁止任何会改账号列表的操作。
     private func ensureWritable() -> Bool {
         guard persistenceBlocked else { return true }
-        showFeedback("账号列表文件异常，暂不能添加或导入账号。请检查 store.json 后重启应用", kind: .warning)
+        showFeedback("账号列表文件异常，暂不能修改账号列表。请检查 store.json 后重启应用", kind: .warning)
         return false
     }
 
@@ -703,7 +703,12 @@ final class AppModel: ObservableObject {
                 let signature = try await transport.downloadSignature(sigURL)
                 try UpdateVerifier.verifySignature(zip: zip, signatureBase64: signature, key: key)
                 let unpacked = try installer.unpackZip(zip)
-                try UpdateVerifier.verifyBundle(unpacked, expectedVersion: release.version)
+                do {
+                    try UpdateVerifier.verifyBundle(unpacked, expectedVersion: release.version)
+                } catch {
+                    try? FileManager.default.removeItem(at: unpacked.deletingLastPathComponent())
+                    throw error
+                }
                 self.updateState = .ready(release, unpackedApp: unpacked)
             } catch is CancellationError {
                 self.updateState = .available(release, silenced: false)

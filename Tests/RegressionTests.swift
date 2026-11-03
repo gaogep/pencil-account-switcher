@@ -636,6 +636,13 @@ struct RegressionTests {
         if case .idle = sameModel.updateState { check(true, "same version stays idle") }
         else { check(false, "same version stays idle") }
 
+        // 前面空状态用例清空了 accounts；这里恢复后再验切换按钮。
+        target.session = snapshot(a.email)
+        model.accounts = [a, b]
+        model.syncCurrentIdentity()
+        model.updateState = .idle
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        panel.view.layoutSubtreeIfNeeded()
         let switchButton = buttons(in: panel.view).compactMap { $0 as? AccountActionButton }
             .first { $0.identifier?.rawValue == ButtonID.switchAccount }
         check(switchButton?.accountID != nil, "switch button keeps a stable identifier and account id")
