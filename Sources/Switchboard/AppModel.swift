@@ -477,7 +477,10 @@ final class AppModel: ObservableObject {
             }
         }
         let provider = quota
-        let results = await withTaskGroup(of: (UUID, QuotaResult).self) { group in
+        let results: [UUID: QuotaResult] = await withTaskGroup(
+            of: (UUID, QuotaResult).self,
+            returning: [UUID: QuotaResult].self
+        ) { group in
             var iterator = jobs.makeIterator()
             func addNext() -> Bool {
                 guard let (id, prepared) = iterator.next() else { return false }
