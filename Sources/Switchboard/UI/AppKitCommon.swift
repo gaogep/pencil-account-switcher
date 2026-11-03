@@ -440,6 +440,8 @@ final class RefreshButton: NSButton {
         setAccessibilityLabel("刷新额度")
         focusRingType = .exterior
         wantsLayer = true
+        // CI / 无显示器环境下 wantsLayer 不会立刻建层，这里显式挂上，避免图标动画和测试空解包。
+        if layer == nil { layer = CALayer() }
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         iconLayer.contentsScale = scale
         iconLayer.contents = tintedIcon.layerContents(forContentsScale: scale)
