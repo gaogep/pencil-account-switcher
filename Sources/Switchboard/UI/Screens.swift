@@ -49,9 +49,17 @@ class BaseScreen: NSViewController {
     }
 
     func makeAddButton(width: CGFloat) -> NSView {
-        makeOutlineActionButton(model.addingAccount ? "取消网页登录" : "添加账号",
-                                symbol: model.addingAccount ? "xmark" : "plus",
-                                action: #selector(addAccount), target: self, width: width)
+        let cancelling = model.addingAccount
+        let view = makeOutlineActionButton(cancelling ? "取消网页登录" : "添加账号",
+                                           symbol: cancelling ? "xmark" : "plus",
+                                           action: #selector(addAccount), target: self, width: width)
+        if let button = view.subviews.first as? NSButton {
+            button.identifier = NSUserInterfaceItemIdentifier(cancelling ? ButtonID.cancelLogin : ButtonID.addAccount)
+            if !cancelling && model.persistenceBlocked {
+                button.isEnabled = false
+            }
+        }
+        return view
     }
 
     @objc func addAccount() {
@@ -62,7 +70,8 @@ class BaseScreen: NSViewController {
         let view = makeQuietActionButton("重新导入", symbol: "arrow.triangle.2.circlepath",
                                          action: #selector(addAccount), target: self)
         if let button = view.subviews.first as? NSButton {
-            let busy = model.refreshing || model.switchingTo != nil || model.addingAccount
+            button.identifier = NSUserInterfaceItemIdentifier(ButtonID.reimport)
+            let busy = model.refreshing || model.switchingTo != nil || model.addingAccount || model.persistenceBlocked
             button.isEnabled = !busy
             button.toolTip = "登录已失效，打开网页重新登录 \(record.email)，无需先移除"
             button.setAccessibilityLabel("重新导入 \(record.email)")
@@ -484,6 +493,8 @@ final class MainScreen: BaseScreen {
         let text = makeLabel("检测到未登记的登录身份：\(email)", size: 11, color: Theme.textSecondary)
         let importButton = makeLinkButton("导入", action: #selector(importLive), target: self,
                                           color: Theme.switchBtnText)
+        importButton.identifier = NSUserInterfaceItemIdentifier(ButtonID.importLive)
+        importButton.isEnabled = !model.persistenceBlocked
         let row = makeHStack([icon, text, makeSpacer(), importButton], spacing: 8)
         card.addSubview(row)
         NSLayoutConstraint.pin(row, to: card, insets: NSEdgeInsets(top: 10, left: 12, bottom: 10, right: 12))
@@ -511,9 +522,9 @@ final class MainScreen: BaseScreen {
 
         let switchButton = makePillButton(isSwitching ? "切换中…" : "切换",
                                           bg: Theme.switchBtnBG, textColor: Theme.switchBtnText,
-                                          action: #selector(switchAccount(_:)), target: self)
+                                          action: #selector(switchAccount(_:)), target: self,
+                                          identifier: ButtonID.switchAccount, accountID: record.id)
         if let button = switchButton.subviews.first as? NSButton {
-            button.identifier = NSUserInterfaceItemIdentifier(record.id.uuidString)
             button.isEnabled = !anySwitching && !model.refreshing
             if record.authState == .expired {
                 button.toolTip = "登录已失效，切换后若仍无法使用请点重新导入"
@@ -567,8 +578,8 @@ final class MainScreen: BaseScreen {
     @objc private func openSettings() { model.route = .settings }
     @objc private func importLive() { model.importCurrentLogin() }
     @objc private func switchAccount(_ sender: NSButton) {
-        guard let idString = sender.identifier?.rawValue,
-              let record = model.accounts.first(where: { $0.id.uuidString == idString }) else { return }
+        guard let id = (sender as? AccountActionButton)?.accountID,
+              let record = model.accounts.first(where: { $0.id == id }) else { return }
         Task { await model.switchTo(record) }
     }
 }
@@ -689,7 +700,10 @@ final class ManageScreen: BaseScreen {
 
         contentStack.addArrangedSubview(makeAddButton(width: Theme.panelWidth - 40))
 
-        contentStack.addArrangedSubview(makeLinkButton("导入 Pen 当前登录（备用）", action: #selector(importCurrent), target: self))
+        let importFallback = makeLinkButton("导入 Pen 当前登录（备用）", action: #selector(importCurrent), target: self)
+        importFallback.identifier = NSUserInterfaceItemIdentifier(ButtonID.importCurrent)
+        importFallback.isEnabled = !model.persistenceBlocked
+        contentStack.addArrangedSubview(importFallback)
 
         let hintIcon = makeSymbol("info.circle", size: 13, color: Theme.textSecondary)
         let hintText = makeLabel("移除账号前会再次确认。移除只清理切号器本地的记录与凭据，不会注销远端账号。",
@@ -738,10 +752,11 @@ final class ManageScreen: BaseScreen {
                                     bg: Theme.removeBtnBG, textColor: Theme.removeBtnText,
                                     action: #selector(confirmRemove(_:)), target: self,
                                     font: .systemFont(ofSize: 10),
-                                    insets: NSEdgeInsets(top: 7, left: 8, bottom: 7, right: 8))
+                                    insets: NSEdgeInsets(top: 7, left: 8, bottom: 7, right: 8),
+                                    identifier: ButtonID.removeAccount, accountID: record.id)
         if let button = remove.subviews.first as? NSButton {
-            button.identifier = NSUserInterfaceItemIdentifier(record.id.uuidString)
             button.isEnabled = !record.isCurrent && model.switchingTo == nil && !model.addingAccount
+                && !model.persistenceBlocked
             button.contentTintColor = record.isCurrent ? Theme.removeBtnIcon : Theme.removeBtnText
             button.toolTip = record.isCurrent ? "当前账号不可直接移除，请先切换到其他账号" : "从切号器移除 \(record.email)"
             button.setAccessibilityLabel(record.isCurrent ? "当前账号不可移除" : "移除 \(record.email)")
@@ -759,8 +774,8 @@ final class ManageScreen: BaseScreen {
     @objc private func importCurrent() { model.importCurrentLogin() }
 
     @objc private func confirmRemove(_ sender: NSButton) {
-        guard let idString = sender.identifier?.rawValue,
-              let record = model.accounts.first(where: { $0.id.uuidString == idString }),
+        guard let id = (sender as? AccountActionButton)?.accountID,
+              let record = model.accounts.first(where: { $0.id == id }),
               !record.isCurrent else { return }
         let alert = NSAlert()
         alert.messageText = "从切号器移除此账号？"
@@ -875,13 +890,15 @@ final class PanelController: NSViewController {
         let locked = model.refreshing || model.switchingTo != nil || model.updateState.isBusy
         func walk(_ view: NSView) {
             if let button = view as? NSButton {
-                switch button.title {
-                case "切换", "切换中…":
+                switch button.identifier?.rawValue {
+                case ButtonID.switchAccount:
                     button.isEnabled = !locked && !model.addingAccount
-                case "添加账号", "重新导入":
-                    button.isEnabled = !locked && !model.addingAccount
-                case "取消网页登录":
+                case ButtonID.addAccount, ButtonID.reimport:
+                    button.isEnabled = !locked && !model.addingAccount && !model.persistenceBlocked
+                case ButtonID.cancelLogin:
                     button.isEnabled = !model.refreshing && model.switchingTo == nil
+                case ButtonID.removeAccount, ButtonID.importLive, ButtonID.importCurrent:
+                    if model.persistenceBlocked { button.isEnabled = false }
                 default:
                     break
                 }

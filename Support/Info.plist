@@ -28,5 +28,7 @@
 	<string>13.0</string>
 	<key>SBGitHubRepo</key>
 	<string>gaogep/pencil-account-switcher</string>
+	<key>SBUpdatePublicKey</key>
+	<string>cUa0rnrFFSYei7buPITITucprUfLfocTXByr+K0CnMo=</string>
 </dict>
 </plist>

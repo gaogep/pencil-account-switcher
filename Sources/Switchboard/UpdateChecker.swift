@@ -1,10 +1,14 @@
-import AppKit
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 struct AppRelease: Equatable {
     var version: String
     var zipURL: URL
     var pageURL: URL
+    /// 与 zip 同名的 Ed25519 签名（base64）。缺省为 nil，方便旧测试构造。
+    var signatureURL: URL? = nil
 }
 
 enum AppUpdateState: Equatable {
@@ -12,11 +16,10 @@ enum AppUpdateState: Equatable {
     case available(AppRelease, silenced: Bool)
     case downloading(AppRelease, percent: Int, received: Int64, total: Int64?)
     case ready(AppRelease, unpackedApp: URL)
-    case failed(String)
 
     var release: AppRelease? {
         switch self {
-        case .idle, .failed: return nil
+        case .idle: return nil
         case .available(let release, _), .downloading(let release, _, _, _), .ready(let release, _):
             return release
         }
@@ -35,7 +38,6 @@ enum AppUpdateState: Equatable {
         case .available(let release, let silenced): return "available:\(release.version):\(silenced)"
         case .downloading(let release, _, _, _): return "downloading:\(release.version)"
         case .ready(let release, _): return "ready:\(release.version)"
-        case .failed: return "failed"
         }
     }
 }
@@ -60,9 +62,9 @@ enum UpdateVersion {
         return .orderedSame
     }
 
+    /// 只接受文件名里带 arm64、并且以 .zip 结尾的包。不再退回任意 zip。
     static func zipAsset(from names: [String]) -> String? {
         names.first { $0.lowercased().contains("arm64") && $0.lowercased().hasSuffix(".zip") }
-            ?? names.first { $0.lowercased().hasSuffix(".zip") }
     }
 
     static func formatBytes(_ value: Int64) -> String {
@@ -87,17 +89,42 @@ protocol UpdateInstaller {
     func relaunch(at url: URL)
 }
 
+protocol UpdateTransport {
+    func downloadZip(_ url: URL, onProgress: @escaping (Int64, Int64) -> Void) async throws -> URL
+    func downloadSignature(_ url: URL) async throws -> String
+}
+
+struct SessionUpdateTransport: UpdateTransport {
+    func downloadZip(_ url: URL, onProgress: @escaping (Int64, Int64) -> Void) async throws -> URL {
+        let task = DownloadTask()
+        task.onProgress = onProgress
+        return try await task.download(url)
+    }
+
+    func downloadSignature(_ url: URL) async throws -> String {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if DownloadTask.errorIfUnsuccessful(response) != nil {
+            throw NSError(domain: "SwitchboardUpdate", code: 11,
+                          userInfo: [NSLocalizedDescriptionKey: "下载签名文件失败"])
+        }
+        return String(decoding: data, as: UTF8.self)
+    }
+}
+
 struct GitHubReleaseFeed: ReleaseFeed {
     let repo: String
     let session: URLSession
+    let apiBase: URL
 
-    init(repo: String, session: URLSession = .shared) {
+    init(repo: String, session: URLSession = .shared,
+         apiBase: URL = URL(string: "https://api.github.com")!) {
         self.repo = repo
         self.session = session
+        self.apiBase = apiBase
     }
 
     func fetchLatest() async throws -> AppRelease {
-        guard let url = URL(string: "https://api.github.com/repos/\(repo)/releases/latest") else {
+        guard let url = URL(string: "\(apiBase.absoluteString)/repos/\(repo)/releases/latest") else {
             throw URLError(.badURL)
         }
         var request = URLRequest(url: url)
@@ -114,10 +141,12 @@ struct GitHubReleaseFeed: ReleaseFeed {
         guard let zipName = UpdateVersion.zipAsset(from: names),
               let asset = decoded.assets.first(where: { $0.name == zipName }),
               let zipURL = URL(string: asset.browserDownloadURL),
+              let sigAsset = decoded.assets.first(where: { $0.name == zipName + ".sig" }),
+              let sigURL = URL(string: sigAsset.browserDownloadURL),
               let pageURL = URL(string: decoded.htmlURL) else {
             throw URLError(.cannotParseResponse)
         }
-        return AppRelease(version: version, zipURL: zipURL, pageURL: pageURL)
+        return AppRelease(version: version, zipURL: zipURL, pageURL: pageURL, signatureURL: sigURL)
     }
 
     private struct Payload: Decodable {
@@ -157,16 +186,22 @@ struct FileUpdateInstaller: UpdateInstaller {
             throw NSError(domain: "SwitchboardUpdate", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "解压更新包失败"])
         }
+        return try Self.uniqueApp(in: folder)
+    }
+
+    /// 解压目录里必须恰好有一个 .app，避免装进包内附带的其他应用。
+    static func uniqueApp(in folder: URL) throws -> URL {
         let apps = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "app" }
-        guard let app = apps.first else {
+        guard apps.count == 1, let app = apps.first else {
             throw NSError(domain: "SwitchboardUpdate", code: 2,
-                          userInfo: [NSLocalizedDescriptionKey: "更新包里没有应用"])
+                          userInfo: [NSLocalizedDescriptionKey: "更新包结构异常"])
         }
         return app
     }
 
     func replace(current: URL, with newApp: URL) throws {
+        // 隔离标记在签名和 bundle 校验通过之后才清。调用方必须先验签。
         let cleaner = Process()
         cleaner.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
         cleaner.arguments = ["-cr", newApp.path]
@@ -175,22 +210,63 @@ struct FileUpdateInstaller: UpdateInstaller {
         _ = try FileManager.default.replaceItemAt(current, withItemAt: newApp)
     }
 
+    /// 等当前进程退出后再 open。旧进程还活着时，LaunchServices 只会把已有实例拉到前台。
     func relaunch(at url: URL) {
-        NSWorkspace.shared.open(url)
+        let pid = ProcessInfo.processInfo.processIdentifier
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = [
+            "-c",
+            "while /bin/kill -0 \(pid) 2>/dev/null; do /bin/sleep 0.2; done; /usr/bin/open \"$1\"",
+            "sh", url.path,
+        ]
+        try? process.run()
     }
 }
 
-final class DownloadTask: NSObject, URLSessionDownloadDelegate {
+final class DownloadTask: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    private let lock = NSLock()
     private var continuation: CheckedContinuation<URL, Error>?
-    private var destination: URL?
+    private var task: URLSessionDownloadTask?
     var onProgress: ((Int64, Int64) -> Void)?
 
     func download(_ url: URL) async throws -> URL {
-        try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-            let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-            session.downloadTask(with: url).resume()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+                let task = session.downloadTask(with: url)
+                lock.withLock {
+                    self.continuation = continuation
+                    self.task = task
+                }
+                if Task.isCancelled {
+                    task.cancel()
+                    return
+                }
+                task.resume()
+            }
+        } onCancel: {
+            let task = lock.withLock { self.task }
+            task?.cancel()
         }
+    }
+
+    /// 非 2xx（或根本没有 HTTP 响应）时返回带状态码的错误。
+    static func errorIfUnsuccessful(_ response: URLResponse?) -> Error? {
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+            return NSError(domain: "SwitchboardUpdate", code: code,
+                           userInfo: [NSLocalizedDescriptionKey: "下载更新失败（HTTP \(code)）"])
+        }
+        return nil
+    }
+
+    private func finish(_ result: Result<URL, Error>) {
+        let pending = lock.withLock { () -> CheckedContinuation<URL, Error>? in
+            defer { continuation = nil }
+            return continuation
+        }
+        pending?.resume(with: result)
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
@@ -201,22 +277,24 @@ final class DownloadTask: NSObject, URLSessionDownloadDelegate {
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                     didFinishDownloadingTo location: URL) {
+        if let error = Self.errorIfUnsuccessful(downloadTask.response) {
+            finish(.failure(error))
+            return
+        }
         do {
             let copy = FileManager.default.temporaryDirectory
                 .appendingPathComponent("Switchboard-\(UUID().uuidString).zip")
             try FileManager.default.copyItem(at: location, to: copy)
-            continuation?.resume(returning: copy)
+            finish(.success(copy))
         } catch {
-            continuation?.resume(throwing: error)
+            finish(.failure(error))
         }
-        continuation = nil
-        session.finishTasksAndInvalidate()
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error {
-            continuation?.resume(throwing: error)
-            continuation = nil
+            let mapped: Error = (error as? URLError)?.code == .cancelled ? CancellationError() : error
+            finish(.failure(mapped))
         }
         session.finishTasksAndInvalidate()
     }

@@ -2,10 +2,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p .build/tests
+swiftc -o .build/tests/UpdateLogicTests \
+  Sources/Switchboard/UpdateChecker.swift \
+  Tests/UpdateLogicTests.swift
+.build/tests/UpdateLogicTests
+
 swiftc -o .build/tests/RegressionTests \
   Sources/Switchboard/AppModel.swift Sources/Switchboard/Models.swift \
   Sources/Switchboard/PenTargetAdapter.swift Sources/Switchboard/CredentialStore.swift \
-  Sources/Switchboard/WebLogin.swift Sources/Switchboard/QuotaProvider.swift Sources/Switchboard/UpdateChecker.swift Sources/Switchboard/UI/*.swift \
+  Sources/Switchboard/WebLogin.swift Sources/Switchboard/QuotaProvider.swift \
+  Sources/Switchboard/UpdateChecker.swift Sources/Switchboard/UpdateVerifier.swift \
+  Sources/Switchboard/UI/*.swift \
   Tests/RegressionTests.swift
 .build/tests/RegressionTests
 if [[ "${1:-}" == "--ui" ]]; then
