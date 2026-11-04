@@ -215,6 +215,9 @@ struct RegressionTests {
         do {
             try adapter.applySnapshot(snapshot(a.email))
             check(adapter.liveIdentity() == a.email, "restore creates missing session file")
+            let sessionURL = directory.appendingPathComponent(".pencil/session-desktop.json")
+            let mode = (try FileManager.default.attributesOfItem(atPath: sessionURL.path)[.posixPermissions] as! NSNumber).uint16Value & 0o777
+            check(mode == 0o600, "session file is 0600 after applySnapshot")
         } catch {
             check(false, "restore creates missing session file")
         }

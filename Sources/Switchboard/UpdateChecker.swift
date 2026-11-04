@@ -89,6 +89,18 @@ protocol UpdateInstaller {
     func relaunch(at url: URL)
 }
 
+enum UpdateInstallError: LocalizedError, Equatable {
+    /// App Translocation 只读，或安装目录无写权限（例如直接在 DMG / 下载里跑）
+    case locationNotWritable
+
+    var errorDescription: String? {
+        switch self {
+        case .locationNotWritable:
+            return "请先把应用拖到「应用程序」文件夹后再更新"
+        }
+    }
+}
+
 protocol UpdateTransport {
     func downloadZip(_ url: URL, onProgress: @escaping (Int64, Int64) -> Void) async throws -> URL
     func downloadSignature(_ url: URL) async throws -> String
@@ -200,7 +212,20 @@ struct FileUpdateInstaller: UpdateInstaller {
         return app
     }
 
+    /// DMG / 下载里直接打开会进 App Translocation（只读）；无写权限的目录也无法替换。
+    static func assertReplaceable(current: URL, fileManager: FileManager = .default) throws {
+        let path = current.resolvingSymlinksInPath().path
+        if path.contains("/AppTranslocation/") {
+            throw UpdateInstallError.locationNotWritable
+        }
+        let parent = current.deletingLastPathComponent()
+        guard fileManager.isWritableFile(atPath: parent.path) else {
+            throw UpdateInstallError.locationNotWritable
+        }
+    }
+
     func replace(current: URL, with newApp: URL) throws {
+        try Self.assertReplaceable(current: current)
         // 隔离标记在签名和 bundle 校验通过之后才清。调用方必须先验签。
         let cleaner = Process()
         cleaner.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")

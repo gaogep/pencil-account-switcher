@@ -75,6 +75,49 @@ struct UpdateLogicTests {
             check(error.localizedDescription.contains("结构异常"), "a package with two apps is rejected")
         }
 
+        let writableApp = root.appendingPathComponent("Pencil Account Switcher.app")
+        try! FileManager.default.createDirectory(at: writableApp, withIntermediateDirectories: true)
+        do {
+            try FileUpdateInstaller.assertReplaceable(current: writableApp)
+            check(true, "writable install location is accepted")
+        } catch {
+            check(false, "writable install location is accepted")
+        }
+
+        let translocation = root
+            .appendingPathComponent("AppTranslocation", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+            .appendingPathComponent("d", isDirectory: true)
+            .appendingPathComponent("Pencil Account Switcher.app")
+        try! FileManager.default.createDirectory(at: translocation, withIntermediateDirectories: true)
+        do {
+            try FileUpdateInstaller.assertReplaceable(current: translocation)
+            check(false, "App Translocation location is rejected")
+        } catch let error as UpdateInstallError {
+            check(error == .locationNotWritable
+                  && error.localizedDescription.contains("应用程序"),
+                  "App Translocation location is rejected")
+        } catch {
+            check(false, "App Translocation location is rejected")
+        }
+
+        let lockedParent = root.appendingPathComponent("locked-\(UUID().uuidString)", isDirectory: true)
+        try! FileManager.default.createDirectory(at: lockedParent, withIntermediateDirectories: true)
+        let lockedApp = lockedParent.appendingPathComponent("Pencil Account Switcher.app")
+        try! FileManager.default.createDirectory(at: lockedApp, withIntermediateDirectories: true)
+        try! FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: lockedParent.path)
+        defer {
+            try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: lockedParent.path)
+        }
+        do {
+            try FileUpdateInstaller.assertReplaceable(current: lockedApp)
+            check(false, "non-writable install location is rejected")
+        } catch let error as UpdateInstallError {
+            check(error == .locationNotWritable, "non-writable install location is rejected")
+        } catch {
+            check(false, "non-writable install location is rejected")
+        }
+
         await checkDownload(status: 404, body: Data("missing".utf8), delay: 0) { url in
             let task = DownloadTask()
             do {

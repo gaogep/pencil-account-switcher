@@ -97,6 +97,9 @@ final class PenTargetAdapter: TargetAdapter {
         let directory = sessionFileURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try data.write(to: sessionFileURL, options: .atomic)
+        // .atomic 新建文件默认 0644；会话含 token，收紧到 0600
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600], ofItemAtPath: sessionFileURL.path)
 
         // 落盘后校验身份与快照一致
         guard let live = liveIdentity(), emailsMatch(live, snapshot.email) else {
