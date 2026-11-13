@@ -1,5 +1,6 @@
 name: Pen compatibility
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       version:
@@ -64,6 +65,7 @@ jobs:
           $asar = Join-Path (Split-Path $env:PEN_EXE) 'resources/app.asar'
           node scripts/check_pen_compat.mjs $asar | Tee-Object report/static.txt
           if ($LASTEXITCODE -ne 0) { throw 'Static compatibility failed' }
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build probe
         run: cargo build --locked --release --manifest-path tools/pen-probe/Cargo.toml --target x86_64-pc-windows-msvc
       - name: Exercise Pen and record results
