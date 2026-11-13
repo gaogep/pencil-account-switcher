@@ -1,0 +1,1 @@
+{"accounts":[{"plan":"Pro 方案","usedDays":1,"lastQuotaUpdate":816229440,"authState":"ok","email":"fixture.one@example.test","isCurrent":true,"id":"11111111-1111-4111-8111-111111111111","totalDays":5},{"isCurrent":false,"id":"22222222-2222-4222-8222-222222222222","authState":"expired","email":"fixture.two@example.test","lastError":"登录已过期，请重新登录该账号"}],"storeVersion":1}

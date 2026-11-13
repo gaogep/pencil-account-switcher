@@ -1,0 +1,159 @@
+name: Pen compatibility
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Pen version (empty for latest)
+        required: false
+        type: string
+  schedule:
+    - cron: '0 4 * * 1'
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      windows: ${{ steps.release.outputs.windows }}
+      macos: ${{ steps.release.outputs.macos }}
+    steps:
+      - id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$VERSION" ]; then
+            release=$(gh api "repos/highagency/pen-desktop-releases/releases/tags/v${VERSION#v}")
+          else
+            release=$(gh api repos/highagency/pen-desktop-releases/releases/latest)
+          fi
+          echo "$release" | jq -er '.tag_name' | sed 's/^v//' | xargs -I{} echo 'version={}' >> "$GITHUB_OUTPUT"
+          echo "$release" | jq -er '.assets[] | select(.name | test("-win-x64\\.zip$")) | .browser_download_url' | xargs -I{} echo 'windows={}' >> "$GITHUB_OUTPUT"
+          echo "$release" | jq -er '.assets[] | select(.name | test("-mac-arm64\\.zip$")) | .browser_download_url' | xargs -I{} echo 'macos={}' >> "$GITHUB_OUTPUT"
+  windows:
+    needs: resolve
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache@v4
+        id: pen-cache
+        with:
+          path: pen.zip
+          key: pen-windows-${{ needs.resolve.outputs.version }}
+      - name: Download and extract Pen
+        shell: pwsh
+        env:
+          PEN_URL: ${{ needs.resolve.outputs.windows }}
+        run: |
+          if (-not (Test-Path pen.zip)) { Invoke-WebRequest $env:PEN_URL -OutFile pen.zip }
+          Expand-Archive pen.zip -DestinationPath pen
+          New-Item -ItemType Directory -Force report | Out-Null
+          $exe = Get-ChildItem pen -Filter Pen.exe -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $exe) { throw 'Pen.exe not found' }
+          "PEN_EXE=$exe" >> $env:GITHUB_ENV
+      - name: Inspect Pen source
+        shell: pwsh
+        run: |
+          $asar = Join-Path (Split-Path $env:PEN_EXE) 'resources/app.asar'
+          node scripts/check_pen_compat.mjs $asar | Tee-Object report/static.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Static compatibility failed' }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build probe
+        run: cargo build --locked --release --manifest-path tools/pen-probe/Cargo.toml --target x86_64-pc-windows-msvc
+      - name: Exercise Pen and record results
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $probe = Join-Path $PWD 'target/x86_64-pc-windows-msvc/release/pen-probe.exe'
+          function Probe([string]$file, [string[]]$arguments) {
+            $output = & $probe @arguments
+            $output | Set-Content "report/$file.json"
+            if ($LASTEXITCODE -ne 0) { throw "Probe failed: $($arguments -join ' '): $output" }
+            return ($output | ConvertFrom-Json)
+          }
+          $hostInfo = Probe 'hostname' @('hostname')
+          $node = node -e "const os=require('os'),c=require('crypto'); console.log(JSON.stringify({hostname:os.hostname(),deviceId:c.createHash('md5').update(os.hostname()+os.platform()+os.arch()).digest('hex')}))" | ConvertFrom-Json
+          if ($hostInfo.hostname -cne $node.hostname -or $hostInfo.deviceId -cne $node.deviceId) { throw 'hostname or device ID differs from Node' }
+          function Wait-Window {
+            for ($i = 0; $i -lt 60; $i++) {
+              $result = & $probe main-window | ConvertFrom-Json
+              if ($LASTEXITCODE -eq 0) { return $result }
+              Start-Sleep -Seconds 1
+            }
+            throw 'Pen window did not appear within 60 seconds'
+          }
+          Start-Process $env:PEN_EXE
+          $window = Wait-Window
+          $window | ConvertTo-Json | Set-Content report/main-window.json
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $image = [System.Drawing.Bitmap]::new($screen.Width, $screen.Height)
+          $graphics = [System.Drawing.Graphics]::FromImage($image)
+          $graphics.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+          $image.Save("$PWD/report/screen.png"); $graphics.Dispose(); $image.Dispose()
+          $processes = Probe 'processes' @('processes')
+          if (-not ($processes | Where-Object { $_.path -ieq $env:PEN_EXE })) { throw 'Pen process path not found' }
+          Probe 'windows' @('windows') | Out-Null
+          Probe 'quit' @('quit','--timeout','15') | Out-Null
+          $sessionDir = Join-Path $env:USERPROFILE '.pencil'
+          New-Item -ItemType Directory -Force $sessionDir | Out-Null
+          $session = Join-Path $sessionDir 'session-desktop.json'
+          '{"email":"fake@example.invalid","token":"fake-token"}' | Set-Content $session
+          $before = Get-FileHash $session
+          Start-Process $env:PEN_EXE
+          Wait-Window | Out-Null
+          Start-Sleep -Seconds 20
+          Probe 'fake-session-quit' @('quit','--timeout','15') | Out-Null
+          $after = if (Test-Path $session) { (Get-FileHash $session).Hash } else { $null }
+          @{ before = $before.Hash; after = $after; exists = (Test-Path $session) } | ConvertTo-Json | Set-Content report/session-observation.json
+          Probe 'launch' @('launch',$env:PEN_EXE) | Out-Null
+          Wait-Window | Out-Null
+          Probe 'second-launch' @('launch',$env:PEN_EXE) | Out-Null
+          Start-Sleep -Seconds 5
+          $windows = Probe 'single-instance-windows' @('windows')
+          if (@($windows | Where-Object { $_.visible -and $_.title -eq 'pen.dev' }).Count -ne 1) { throw 'Expected one main window' }
+          Probe 'final-quit' @('quit','--timeout','15') | Out-Null
+          try {
+            Probe 'autostart-set' @('autostart','set','--name','SwitchboardCI','--value','"C:\SwitchboardCI.exe"') | Out-Null
+            $autostart = Probe 'autostart-get' @('autostart','get','--name','SwitchboardCI')
+            if (-not $autostart.enabled -or $autostart.value -ne '"C:\SwitchboardCI.exe"') { throw 'Autostart mismatch' }
+          } finally { Probe 'autostart-clear' @('autostart','clear','--name','SwitchboardCI') | Out-Null }
+      - name: Collect logs
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force report | Out-Null
+          $log = Join-Path $env:APPDATA 'Pen/logs/main.log'
+          if (Test-Path $log) { Copy-Item $log report/main.log }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pen-windows-report
+          path: report/
+  macos:
+    needs: resolve
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Download and inspect Pen
+        env:
+          PEN_URL: ${{ needs.resolve.outputs.macos }}
+        run: |
+          curl -fL "$PEN_URL" -o pen.zip
+          ditto -x -k pen.zip pen
+          asar=$(find pen -path '*/Contents/Resources/app.asar' -print -quit)
+          test -n "$asar"
+          node scripts/check_pen_compat.mjs "$asar"
