@@ -56,6 +56,11 @@ pub fn atomic_write(path: &Path, data: &[u8], private: bool) -> io::Result<()> {
 pub struct FileCredentialStore {
     directory: PathBuf,
 }
+pub trait CredentialStore: Send + Sync {
+    fn save(&self, account: &str, data: &[u8]) -> io::Result<()>;
+    fn load(&self, account: &str) -> io::Result<Vec<u8>>;
+    fn delete(&self, account: &str) -> io::Result<()>;
+}
 impl FileCredentialStore {
     pub fn new(platform: &impl DataDirectory) -> Self {
         Self {
@@ -83,6 +88,18 @@ impl FileCredentialStore {
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
             result => result,
         }
+    }
+}
+
+impl CredentialStore for FileCredentialStore {
+    fn save(&self, account: &str, data: &[u8]) -> io::Result<()> {
+        FileCredentialStore::save(self, account, data)
+    }
+    fn load(&self, account: &str) -> io::Result<Vec<u8>> {
+        FileCredentialStore::load(self, account)
+    }
+    fn delete(&self, account: &str) -> io::Result<()> {
+        FileCredentialStore::delete(self, account)
     }
 }
 
