@@ -5,4 +5,5 @@ pub mod pen_adapter;
 pub mod quota;
 pub mod store;
 pub mod target;
+pub mod update;
 pub mod web_login;
