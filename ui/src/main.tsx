@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { invoke, listen } from './ipc';
 import type { ViewState } from './generated/ViewState';
 import './theme.css';
+import './components/components.css';
+import { BrandHeader } from './components';
+import { ComponentGallery } from './ComponentGallery';
 
 function App() {
   const [state, setState] = useState<ViewState | null>(null);
@@ -28,6 +31,6 @@ function App() {
     document.addEventListener('keydown', escape);
     return () => document.removeEventListener('keydown', escape);
   }, []);
-  return <main class="panel" ref={root} aria-busy={!state}><h1>Pencil Account Switcher</h1></main>;
+  return <main class="panel" ref={root} aria-busy={!state}>{state && import.meta.env.MODE === 'mock' && new URLSearchParams(location.search).has('gallery') ? <ComponentGallery state={state} /> : <BrandHeader />}</main>;
 }
 render(<App />, document.getElementById('app')!);
