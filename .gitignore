@@ -4,4 +4,5 @@ build/
 .hallmark/
 .cursor/
 node_modules/
+target/
 *.log

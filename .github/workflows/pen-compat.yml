@@ -70,7 +70,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $probe = Join-Path $PWD 'tools/pen-probe/target/x86_64-pc-windows-msvc/release/pen-probe.exe'
+          $probe = Join-Path $PWD 'target/x86_64-pc-windows-msvc/release/pen-probe.exe'
           function Probe([string]$file, [string[]]$arguments) {
             $output = & $probe @arguments
             $output | Set-Content "report/$file.json"
