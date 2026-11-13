@@ -26,11 +26,7 @@ pub fn atomic_write(path: &Path, data: &[u8], private: bool) -> io::Result<()> {
     let dir = path
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "missing parent directory"))?;
-    if private {
-        private_directory(dir)?;
-    } else {
-        fs::create_dir_all(dir)?;
-    }
+    fs::create_dir_all(dir)?;
     let mut file = tempfile::NamedTempFile::new_in(dir)?;
     #[cfg(unix)]
     if private {
@@ -75,7 +71,9 @@ impl FileCredentialStore {
         )))
     }
     pub fn save(&self, account: &str, data: &[u8]) -> io::Result<()> {
-        atomic_write(&self.path(account)?, data, true)
+        let path = self.path(account)?;
+        private_directory(&self.directory)?;
+        atomic_write(&path, data, true)
     }
     pub fn load(&self, account: &str) -> io::Result<Vec<u8>> {
         fs::read(self.path(account)?)
