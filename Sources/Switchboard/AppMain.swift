@@ -65,35 +65,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func captureSnapshots() {
         guard let prefix = ProcessInfo.processInfo.environment["SWITCHBOARD_SNAPSHOT"],
               let panel = panelWindow?.contentViewController else { return }
-        let routes: [(PanelRoute, String)] = [(.main, "main"), (.settings, "settings"), (.manage, "manage")]
-        var counter = 0
+        // 演示模式下逐个跑完整状态清单；非演示模式只截三个页面（真实数据，仅供本地走查）
+        let demo = ProcessInfo.processInfo.environment["SWITCHBOARD_DEMO"] == "1"
+        let scenarios: [SnapshotScenario] = demo ? SnapshotScenarios.all : [
+            SnapshotScenario(name: "main") { $0.route = .main },
+            SnapshotScenario(name: "settings") { $0.route = .settings },
+            SnapshotScenario(name: "manage") { $0.route = .manage },
+        ]
+        let only = ProcessInfo.processInfo.environment["SWITCHBOARD_SNAPSHOT_ONLY"]
+            .map { Set($0.split(separator: ",").map(String.init)) }
+        var queue = scenarios.filter { only?.contains($0.name) ?? true }
         func next() {
-            guard counter < routes.count else {
+            guard !queue.isEmpty else {
                 NSApp.terminate(nil)
                 return
             }
-            let (route, name) = routes[counter]
-            model.route = route
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            let scenario = queue.removeFirst()
+            if demo { model.resetDemoForSnapshot(quotaTime: SnapshotScenarios.quotaTime) }
+            scenario.setup(model)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [model] in
+                let url = URL(fileURLWithPath: "\(prefix)-\(scenario.name).png")
+                if let email = scenario.alertEmail?(model) {
+                    let alert = ManageScreen.makeRemoveAlert(email: email)
+                    alert.layout()
+                    if let view = alert.window.contentView {
+                        Self.writePNG(of: view, to: url)
+                    }
+                } else {
+                    (panel as? PanelController)?.renderNow()
                     let view = panel.view
-                    FileHandle.standardError.write(
-                        "state \(name): fitting=\(view.fittingSize) frame=\(view.frame) preferred=\(panel.preferredContentSize)\n"
-                            .data(using: .utf8)!)
                     let size = NSSize(width: Theme.panelWidth, height: max(view.fittingSize.height, 200))
                     view.setFrameSize(size)
                     view.layoutSubtreeIfNeeded()
-                    if let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
-                        view.cacheDisplay(in: view.bounds, to: rep)
-                        if let data = rep.representation(using: .png, properties: [:]) {
-                            try? data.write(to: URL(fileURLWithPath: "\(prefix)-\(name).png"))
-                            FileHandle.standardError.write("wrote \(prefix)-\(name).png\n".data(using: .utf8)!)
-                        }
-                    }
-                    counter += 1
-                    next()
+                    Self.writePNG(of: view, to: url)
                 }
+                next()
+            }
         }
         next()
+    }
+
+    private static func writePNG(of view: NSView, to url: URL) {
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        guard let data = rep.representation(using: .png, properties: [:]) else { return }
+        do {
+            try data.write(to: url)
+            FileHandle.standardError.write("wrote \(url.path)\n".data(using: .utf8)!)
+        } catch {
+            FileHandle.standardError.write("failed \(url.path): \(error)\n".data(using: .utf8)!)
+        }
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }

@@ -777,19 +777,25 @@ final class ManageScreen: BaseScreen {
         guard let id = (sender as? AccountActionButton)?.accountID,
               let record = model.accounts.first(where: { $0.id == id }),
               !record.isCurrent else { return }
-        let alert = NSAlert()
-        alert.messageText = "从切号器移除此账号？"
-        alert.informativeText = "将删除 \(record.email) 在本机的登录凭据与额度缓存；远端账号不受影响。"
-        alert.addButton(withTitle: "移除 \(record.email)")
-        alert.addButton(withTitle: "取消")
-        alert.buttons.last?.keyEquivalent = "\u{1b}"
-        alert.buttons.first?.hasDestructiveAction = true
+        let alert = Self.makeRemoveAlert(email: record.email)
         guard let window = view.window else { return }
         alert.beginSheetModal(for: window) { [weak model = model] response in
             if response == .alertFirstButtonReturn {
                 model?.remove(record)
             }
         }
+    }
+
+    /// 移除确认框。截图基线也用它，保证文案和按钮与实际一致。
+    static func makeRemoveAlert(email: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = "从切号器移除此账号？"
+        alert.informativeText = "将删除 \(email) 在本机的登录凭据与额度缓存；远端账号不受影响。"
+        alert.addButton(withTitle: "移除 \(email)")
+        alert.addButton(withTitle: "取消")
+        alert.buttons.last?.keyEquivalent = "\u{1b}"
+        alert.buttons.first?.hasDestructiveAction = true
+        return alert
     }
 
     @objc private func backToSettings() { model.route = .settings }
@@ -831,6 +837,9 @@ final class PanelController: NSViewController {
             .store(in: &cancellables)
         render()
     }
+
+    /// 截图模式用：不等 Combine 的异步回调，立即按当前状态渲染一次。
+    func renderNow() { render() }
 
     private func render() {
         // 内容签名：只有真正影响界面内容的变更才重建。
