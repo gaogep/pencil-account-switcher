@@ -138,7 +138,7 @@ unsafe extern "system" fn collect_window(hwnd: HWND, param: LPARAM) -> i32 {
 }
 
 fn windows(processes: &[Process]) -> Result<Vec<Window>, String> {
-    let mut result = Vec::new();
+    let mut result: Vec<Window> = Vec::new();
     unsafe {
         if EnumWindows(Some(collect_window), &mut result as *mut _ as LPARAM) == 0 {
             return Err(error());
