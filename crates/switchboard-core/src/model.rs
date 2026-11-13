@@ -19,6 +19,21 @@ fn deserialize_uuid<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Uuid, 
     Uuid::parse_str(&value).map_err(serde::de::Error::custom)
 }
 
+fn serialize_swift_date<S: Serializer>(
+    value: &Option<f64>,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    match value {
+        Some(value)
+            if value.fract() == 0.0 && *value >= i64::MIN as f64 && *value < -(i64::MIN as f64) =>
+        {
+            serializer.serialize_i64(*value as i64)
+        }
+        Some(value) => serializer.serialize_f64(*value),
+        None => serializer.serialize_none(),
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountRecord {
@@ -37,6 +52,7 @@ pub struct AccountRecord {
     pub total_days: Option<i64>,
     /// Seconds since 2001-01-01, matching Foundation's default Date encoding.
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(serialize_with = "serialize_swift_date")]
     pub last_quota_update: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_error: Option<String>,

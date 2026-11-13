@@ -10,7 +10,10 @@ use std::{
     time::{Duration, Instant},
 };
 use windows_sys::Win32::{
-    Foundation::{CloseHandle, HWND, INVALID_HANDLE_VALUE, LPARAM, RECT},
+    Foundation::{
+        CloseHandle, GetLastError, ERROR_INVALID_PARAMETER, HWND, INVALID_HANDLE_VALUE, LPARAM,
+        RECT, STILL_ACTIVE,
+    },
     Networking::WinSock::{GetHostNameW, WSACleanup, WSAStartup, WSADATA},
     System::{
         Diagnostics::ToolHelp::{
@@ -19,8 +22,8 @@ use windows_sys::Win32::{
         },
         Registry::*,
         Threading::{
-            CreateProcessW, OpenProcess, QueryFullProcessImageNameW, DETACHED_PROCESS,
-            PROCESS_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION, STARTUPINFOW,
+            CreateProcessW, GetExitCodeProcess, OpenProcess, QueryFullProcessImageNameW,
+            DETACHED_PROCESS, PROCESS_INFORMATION, PROCESS_QUERY_LIMITED_INFORMATION, STARTUPINFOW,
         },
     },
     UI::{
@@ -92,17 +95,31 @@ fn processes() -> Result<Vec<Process>, String> {
                 let process =
                     OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, entry.th32ProcessID);
                 if process.is_null() {
+                    let code = GetLastError();
+                    if code == ERROR_INVALID_PARAMETER {
+                        ok = Process32NextW(snapshot, &mut entry);
+                        continue;
+                    }
                     CloseHandle(snapshot);
-                    return Err(error());
+                    return Err(std::io::Error::from_raw_os_error(code as i32).to_string());
                 }
                 let mut path = vec![0u16; 32768];
                 let mut len = path.len() as u32;
                 let status = QueryFullProcessImageNameW(process, 0, path.as_mut_ptr(), &mut len);
-                CloseHandle(process);
                 if status == 0 {
+                    let code = GetLastError();
+                    let mut exit_code = 0;
+                    let exited = GetExitCodeProcess(process, &mut exit_code) != 0
+                        && exit_code != STILL_ACTIVE as u32;
+                    CloseHandle(process);
+                    if exited {
+                        ok = Process32NextW(snapshot, &mut entry);
+                        continue;
+                    }
                     CloseHandle(snapshot);
-                    return Err(error());
+                    return Err(std::io::Error::from_raw_os_error(code as i32).to_string());
                 }
+                CloseHandle(process);
                 result.push(Process {
                     pid: entry.th32ProcessID,
                     path: String::from_utf16_lossy(&path[..len as usize]),
@@ -286,13 +303,15 @@ fn autostart(action: &str, name: &str, value: Option<&str>) -> Result<Value, Str
         let raw = registry_read(RUN, name)?;
         let approved = registry_read(APPROVED, name)?;
         let enabled = raw.is_some()
-            && approved.as_ref().map_or(true, |(_, data)| {
-                data.first().map_or(true, |b| *b != 3 && *b != 7)
-            });
+            && approved
+                .as_ref()
+                .is_none_or(|(_, data)| data.first().is_none_or(|b| *b != 3 && *b != 7));
         let value = raw.map(|(_, data)| {
             string(
                 &data
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|c| u16::from_le_bytes([c[0], c[1]]))
                     .collect::<Vec<_>>(),
             )

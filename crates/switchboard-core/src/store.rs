@@ -3,6 +3,10 @@ use std::{
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
+    sync::Mutex,
+};
+#[cfg(windows)]
+use std::{
     thread,
     time::{Duration, Instant},
 };
@@ -35,18 +39,20 @@ pub fn atomic_write(path: &Path, data: &[u8], private: bool) -> io::Result<()> {
             .set_permissions(fs::Permissions::from_mode(0o600))?;
     }
     file.write_all(data)?;
+    #[cfg(not(windows))]
+    return file.persist(path).map(|_| ()).map_err(|e| e.error);
+    #[cfg(windows)]
     let deadline = Instant::now() + Duration::from_secs(1);
+    #[cfg(windows)]
     loop {
         match file.persist(path) {
             Ok(_) => return Ok(()),
             Err(e) => {
-                #[cfg(windows)]
                 if e.error.raw_os_error() == Some(32) && Instant::now() < deadline {
                     file = e.file;
                     thread::sleep(Duration::from_millis(50));
                     continue;
                 }
-                let _ = (&deadline, &thread::current());
                 return Err(e.error);
             }
         }
@@ -109,11 +115,16 @@ pub enum LoadStore {
 }
 pub struct Store {
     path: PathBuf,
+    original: Mutex<Option<(StoreFile, Vec<u8>)>>,
 }
 impl Store {
+    pub fn directory(&self) -> &Path {
+        self.path.parent().expect("store has a parent directory")
+    }
     pub fn new(platform: &impl DataDirectory) -> Self {
         Self {
             path: platform.data_dir().join("store.json"),
+            original: Mutex::new(None),
         }
     }
     pub fn load(&self) -> LoadStore {
@@ -126,6 +137,8 @@ impl Store {
         };
         if let Ok(store) = serde_json::from_slice::<StoreFile>(&data) {
             if store.store_version <= 1 {
+                *self.original.lock().unwrap_or_else(|e| e.into_inner()) =
+                    Some((store.clone(), data));
                 return LoadStore::Ready(store);
             }
         }
@@ -137,7 +150,15 @@ impl Store {
         LoadStore::Blocked("账号列表已损坏，已备份且不会覆盖原文件")
     }
     pub fn write(&self, store: &StoreFile) -> io::Result<()> {
+        let mut original = self.original.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some((saved, bytes)) = original.as_ref() {
+            if saved == store && fs::read(&self.path).ok().as_deref() == Some(bytes) {
+                return Ok(());
+            }
+        }
         let data = serde_json::to_vec(store).map_err(io::Error::other)?;
-        atomic_write(&self.path, &data, false)
+        atomic_write(&self.path, &data, false)?;
+        *original = Some((store.clone(), data));
+        Ok(())
     }
 }

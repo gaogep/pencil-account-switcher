@@ -3,11 +3,13 @@ use crate::{
     quota::QuotaResult,
     store::{CredentialStore, LoadStore, Store},
     target::{emails_match, TargetAdapter, TargetFuture, TargetSnapshot},
-    update::AppRelease,
+    update::{self, AppRelease, PlatformAsset, UpdateSchedule},
 };
 use futures_util::{stream, StreamExt};
 use serde::Serialize;
 use std::{
+    io::Write,
+    path::Path,
     sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -25,12 +27,60 @@ pub trait AppServices: Send + Sync + 'static {
     fn quota<'a>(&'a self, snapshot: &'a TargetSnapshot) -> TargetFuture<'a, QuotaResult>;
     fn launch_at_login(&self) -> Result<bool, String>;
     fn set_launch_at_login(&self, enabled: bool) -> Result<(), String>;
-    fn check_updates(&self, force: bool) -> TargetFuture<'_, Result<Option<AppRelease>, String>>;
-    fn start_update(
-        &self,
-        release: AppRelease,
+    fn update_repo(&self) -> &str;
+    fn update_public_key(&self) -> Option<[u8; 32]> {
+        None
+    }
+    fn update_platform(&self) -> PlatformAsset;
+    fn fetch_release(&self) -> TargetFuture<'_, Result<Option<AppRelease>, String>> {
+        Box::pin(async move {
+            if self.update_repo().is_empty() {
+                return Ok(None);
+            }
+            update::fetch_latest(
+                &reqwest::Client::new(),
+                self.update_repo(),
+                self.update_platform(),
+            )
+            .await
+            .map(Some)
+        })
+    }
+    fn download_update<'a>(
+        &'a self,
+        url: &'a str,
         progress: mpsc::UnboundedSender<(u64, Option<u64>)>,
-    ) -> TargetFuture<'_, Result<String, String>>;
+    ) -> TargetFuture<'a, Result<Vec<u8>, String>> {
+        Box::pin(async move {
+            update::download(
+                &reqwest::Client::new(),
+                url,
+                &tokio_util::sync::CancellationToken::new(),
+                |received, total| {
+                    let _ = progress.send((received, total));
+                },
+            )
+            .await
+        })
+    }
+    fn download_signature<'a>(&'a self, url: &'a str) -> TargetFuture<'a, Result<String, String>> {
+        Box::pin(async move {
+            let data = update::download(
+                &reqwest::Client::new(),
+                url,
+                &tokio_util::sync::CancellationToken::new(),
+                |_, _| {},
+            )
+            .await?;
+            String::from_utf8(data).map_err(|e| e.to_string())
+        })
+    }
+    /// Called only after core has verified the package signature.
+    fn prepare_update<'a>(
+        &'a self,
+        package: &'a Path,
+        version: &'a str,
+    ) -> TargetFuture<'a, Result<String, String>>;
     fn install_update<'a>(&'a self, prepared: &'a str) -> TargetFuture<'a, Result<(), String>>;
     fn open_update_page(&self, url: &str) -> Result<(), String>;
 }
@@ -116,20 +166,24 @@ enum Message {
         result: SwitchResult,
         new_login: bool,
     },
+    PerformQuotaRefresh,
     QuotasFinished(Vec<(Uuid, QuotaResult)>),
     SoftVerify {
         expected: String,
         generation: u64,
     },
     UpdateChecked {
+        generation: u64,
         force: bool,
         result: Result<Option<AppRelease>, String>,
     },
     UpdateProgress {
+        generation: u64,
         received: u64,
         total: Option<u64>,
     },
     UpdateDownloaded {
+        generation: u64,
         release: AppRelease,
         result: Result<String, String>,
     },
@@ -173,12 +227,14 @@ struct Model {
     services: Arc<dyn AppServices>,
     credentials: Arc<dyn CredentialStore>,
     store: Store,
+    update_schedule: UpdateSchedule,
     tx: mpsc::UnboundedSender<Message>,
     state_tx: watch::Sender<ViewState>,
     persist_generation: u64,
     feedback_generation: u64,
     verify_generation: u64,
     login_generation: u64,
+    update_generation: u64,
     login_task: Option<JoinHandle<()>>,
     update_task: Option<JoinHandle<()>>,
 }
@@ -223,18 +279,21 @@ pub fn start(
     };
     let (tx, mut rx) = mpsc::unbounded_channel();
     let (state_tx, state_rx) = watch::channel(state.clone());
+    let update_schedule = UpdateSchedule::in_directory(store.directory());
     let mut model = Model {
         state,
         target,
         services,
         credentials,
         store,
+        update_schedule,
         tx: tx.clone(),
         state_tx,
         persist_generation: 0,
         feedback_generation: 0,
         verify_generation: 0,
         login_generation: 0,
+        update_generation: 0,
         login_task: None,
         update_task: None,
     };
@@ -532,7 +591,7 @@ impl Model {
                 format!("已添加账号 {}", snapshot.email)
             };
             self.feedback(text, FeedbackKind::Success, None, false);
-            self.begin_refresh();
+            self.begin_refresh(true);
         }
     }
     fn begin_switch(&mut self, id: Uuid, new_login: bool) {
@@ -586,11 +645,20 @@ impl Model {
             });
         });
     }
-    fn begin_refresh(&mut self) {
+    fn begin_refresh(&mut self, show_import_feedback: bool) {
         if self.demo_blocked("演示模式不请求真实额度") || self.busy() {
             return;
         }
         self.state.refreshing = true;
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            if show_import_feedback {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+            let _ = tx.send(Message::PerformQuotaRefresh);
+        });
+    }
+    fn perform_quota_refresh(&mut self) {
         self.sync_identity();
         self.feedback("正在刷新额度…".into(), FeedbackKind::Loading, None, true);
         let jobs: Vec<_> = self
@@ -739,14 +807,34 @@ impl Model {
         {
             return;
         }
+        if self.services.update_repo().is_empty() || !self.update_schedule.should_check(force) {
+            return;
+        }
+        if let Err(error) = self.update_schedule.attempt() {
+            if force {
+                self.feedback(
+                    format!("检查更新失败：{error}"),
+                    FeedbackKind::Warning,
+                    None,
+                    false,
+                );
+            }
+            return;
+        }
         if let Some(task) = self.update_task.take() {
             task.abort();
         }
+        self.update_generation += 1;
+        let generation = self.update_generation;
         let services = self.services.clone();
         let tx = self.tx.clone();
         self.update_task = Some(tokio::spawn(async move {
-            let result = services.check_updates(force).await;
-            let _ = tx.send(Message::UpdateChecked { force, result });
+            let result = services.fetch_release().await;
+            let _ = tx.send(Message::UpdateChecked {
+                generation,
+                force,
+                result,
+            });
         }));
     }
     fn begin_update(&mut self) {
@@ -757,6 +845,8 @@ impl Model {
         if let Some(task) = self.update_task.take() {
             task.abort();
         }
+        self.update_generation += 1;
+        let generation = self.update_generation;
         self.state.update = UpdateState::Downloading {
             release: release.clone(),
             percent: 0,
@@ -769,12 +859,43 @@ impl Model {
         let event_tx = tx.clone();
         tokio::spawn(async move {
             while let Some((received, total)) = progress_rx.recv().await {
-                let _ = event_tx.send(Message::UpdateProgress { received, total });
+                let _ = event_tx.send(Message::UpdateProgress {
+                    generation,
+                    received,
+                    total,
+                });
             }
         });
         self.update_task = Some(tokio::spawn(async move {
-            let result = services.start_update(release.clone(), progress_tx).await;
-            let _ = tx.send(Message::UpdateDownloaded { release, result });
+            let result = async {
+                if release.signature_url.is_empty() {
+                    return Err("发布缺少签名文件".into());
+                }
+                let package = services
+                    .download_update(&release.asset_url, progress_tx)
+                    .await?;
+                let signature = services.download_signature(&release.signature_url).await?;
+                match services.update_public_key() {
+                    Some(key) => update::verify_signature_with_key(&package, &signature, &key)?,
+                    None => update::verify_signature(&package, &signature)?,
+                }
+                let suffix = match services.update_platform() {
+                    PlatformAsset::Mac => ".zip",
+                    PlatformAsset::Windows => ".exe",
+                };
+                let mut file = tempfile::Builder::new()
+                    .suffix(suffix)
+                    .tempfile()
+                    .map_err(|e| e.to_string())?;
+                file.write_all(&package).map_err(|e| e.to_string())?;
+                services.prepare_update(file.path(), &release.version).await
+            }
+            .await;
+            let _ = tx.send(Message::UpdateDownloaded {
+                generation,
+                release,
+                result,
+            });
         }));
     }
     fn handle(&mut self, message: Message) {
@@ -801,7 +922,7 @@ impl Model {
                 }
                 Command::SwitchTo(id) => self.begin_switch(id, false),
                 Command::RemoveAccount(id) => self.remove(id),
-                Command::RefreshQuotas => self.begin_refresh(),
+                Command::RefreshQuotas => self.begin_refresh(false),
                 Command::SetLaunchAtLogin(enabled) => {
                     if self.state.demo {
                         self.state.launch_at_login = enabled;
@@ -972,7 +1093,7 @@ impl Model {
                             }
                         }
                         if new_login {
-                            self.begin_refresh();
+                            self.begin_refresh(false);
                         }
                     }
                     SwitchResult::Failed(message) => self.feedback(
@@ -987,6 +1108,7 @@ impl Model {
                     ),
                 }
             }
+            Message::PerformQuotaRefresh => self.perform_quota_refresh(),
             Message::QuotasFinished(results) => self.finish_refresh(results),
             Message::SoftVerify {
                 expected,
@@ -1009,36 +1131,56 @@ impl Model {
                     }
                 }
             }
-            Message::UpdateChecked { force, result } => match result {
-                Ok(Some(release))
-                    if crate::update::compare(&self.state.version, &release.version).is_lt() =>
-                {
-                    let silenced = matches!(&self.state.update, UpdateState::Available { release: current, silenced: true } if current.version == release.version);
-                    self.state.update = UpdateState::Available { release, silenced };
+            Message::UpdateChecked {
+                generation,
+                force,
+                result,
+            } => {
+                if generation != self.update_generation {
+                    return;
                 }
-                Ok(Some(_)) => {
-                    if force {
-                        self.feedback(
-                            format!("已是最新版本 {}", self.state.version),
-                            FeedbackKind::Success,
-                            None,
-                            false,
-                        );
+                if matches!(&result, Ok(Some(_))) {
+                    let _ = self.update_schedule.success();
+                }
+                match result {
+                    Ok(Some(release))
+                        if crate::update::compare(&self.state.version, &release.version)
+                            .is_lt() =>
+                    {
+                        let silenced = matches!(&self.state.update, UpdateState::Available { release: current, silenced: true } if current.version == release.version);
+                        self.state.update = UpdateState::Available { release, silenced };
+                    }
+                    Ok(Some(_)) => {
+                        if force {
+                            self.feedback(
+                                format!("已是最新版本 {}", self.state.version),
+                                FeedbackKind::Success,
+                                None,
+                                false,
+                            );
+                        }
+                    }
+                    Ok(None) => (),
+                    Err(e) => {
+                        if force {
+                            self.feedback(
+                                format!("检查更新失败：{e}"),
+                                FeedbackKind::Warning,
+                                None,
+                                false,
+                            );
+                        }
                     }
                 }
-                Ok(None) => (),
-                Err(e) => {
-                    if force {
-                        self.feedback(
-                            format!("检查更新失败：{e}"),
-                            FeedbackKind::Warning,
-                            None,
-                            false,
-                        );
-                    }
+            }
+            Message::UpdateProgress {
+                generation,
+                received,
+                total,
+            } => {
+                if generation != self.update_generation {
+                    return;
                 }
-            },
-            Message::UpdateProgress { received, total } => {
                 if let UpdateState::Downloading {
                     percent,
                     received: current,
@@ -1053,21 +1195,30 @@ impl Model {
                         .map_or(0, |n| ((received.saturating_mul(100) / n).min(100)) as u8);
                 }
             }
-            Message::UpdateDownloaded { release, result } => match result {
-                Ok(prepared) => self.state.update = UpdateState::Ready { release, prepared },
-                Err(e) => {
-                    self.state.update = UpdateState::Available {
-                        release,
-                        silenced: false,
-                    };
-                    self.feedback(
-                        format!("下载更新失败：{e}"),
-                        FeedbackKind::Warning,
-                        None,
-                        false,
-                    );
+            Message::UpdateDownloaded {
+                generation,
+                release,
+                result,
+            } => {
+                if generation != self.update_generation {
+                    return;
                 }
-            },
+                match result {
+                    Ok(prepared) => self.state.update = UpdateState::Ready { release, prepared },
+                    Err(e) => {
+                        self.state.update = UpdateState::Available {
+                            release,
+                            silenced: false,
+                        };
+                        self.feedback(
+                            format!("下载更新失败：{e}"),
+                            FeedbackKind::Warning,
+                            None,
+                            false,
+                        );
+                    }
+                }
+            }
             Message::UpdateInstalled(result) => {
                 if let Err(e) = result {
                     self.feedback(

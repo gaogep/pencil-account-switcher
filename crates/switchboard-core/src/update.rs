@@ -80,7 +80,13 @@ pub async fn fetch_latest(
     if !status.is_success() {
         return Err(format!("HTTP {status}"));
     }
-    let payload: Payload = response.json().await.map_err(|e| e.to_string())?;
+    let data = response.bytes().await.map_err(|e| e.to_string())?;
+    parse_release(&data, platform)
+}
+
+/// Parse a release without making a network request.
+pub fn parse_release(data: &[u8], platform: PlatformAsset) -> Result<AppRelease, String> {
+    let payload: Payload = serde_json::from_slice(data).map_err(|e| e.to_string())?;
     if payload.prerelease {
         return Err("发布版本无效".into());
     }
@@ -109,12 +115,21 @@ pub async fn fetch_latest(
 }
 
 pub fn verify_signature(data: &[u8], signature: &str) -> Result<(), String> {
-    let fail = || "更新包签名校验失败，已中止安装".to_string();
     let key = STANDARD
         .decode(PUBLIC_KEY)
         .map_err(|_| "缺少更新公钥，无法校验更新包")?;
     let key: [u8; 32] = key.try_into().map_err(|_| "缺少更新公钥，无法校验更新包")?;
-    let key = VerifyingKey::from_bytes(&key).map_err(|_| "缺少更新公钥，无法校验更新包")?;
+    verify_signature_with_key(data, signature, &key)
+}
+
+/// Explicit key injection for offline verification; the normal entry point uses the bundled key.
+pub fn verify_signature_with_key(
+    data: &[u8],
+    signature: &str,
+    key: &[u8; 32],
+) -> Result<(), String> {
+    let fail = || "更新包签名校验失败，已中止安装".to_string();
+    let key = VerifyingKey::from_bytes(key).map_err(|_| "缺少更新公钥，无法校验更新包")?;
     let bytes = STANDARD.decode(signature.trim()).map_err(|_| fail())?;
     let signature = Signature::from_slice(&bytes).map_err(|_| fail())?;
     key.verify(data, &signature).map_err(|_| fail())
@@ -161,7 +176,10 @@ pub struct UpdateSchedule {
 }
 impl UpdateSchedule {
     pub fn new(platform: &impl DataDirectory) -> Self {
-        let path = platform.data_dir().join("state.json");
+        Self::in_directory(&platform.data_dir())
+    }
+    pub fn in_directory(directory: &Path) -> Self {
+        let path = directory.join("state.json");
         let times = std::fs::read(&path)
             .ok()
             .and_then(|b| serde_json::from_slice(&b).ok())
@@ -180,11 +198,11 @@ impl UpdateSchedule {
             || (self
                 .times
                 .last_check
-                .map_or(true, |t| now.saturating_sub(t) >= 86400)
+                .is_none_or(|t| now.saturating_sub(t) >= 86400)
                 && self
                     .times
                     .last_attempt
-                    .map_or(true, |t| now.saturating_sub(t) >= 3600))
+                    .is_none_or(|t| now.saturating_sub(t) >= 3600))
     }
     pub fn attempt(&mut self) -> std::io::Result<()> {
         self.times.last_attempt = Some(Self::now());

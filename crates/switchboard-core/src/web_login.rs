@@ -2,20 +2,31 @@ use crate::target::TargetSnapshot;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use reqwest::Url;
 use sha2::{Digest, Sha256};
-use std::{future::Future, pin::Pin, time::Duration};
+use std::{future::Future, pin::Pin, sync::Mutex, time::Duration};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::TcpListener,
+    net::{TcpListener, TcpStream},
 };
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 pub trait AuthWindow: Send + Sync {
-    fn open<'a>(
-        &'a self,
-        url: &'a str,
-    ) -> Pin<Box<dyn Future<Output = Result<(), String>> + Send + 'a>>;
+    /// Start the window immediately. Its closure must be observable by `closed`.
+    fn open(&self, url: &str) -> Result<(), String>;
+    /// Resolve when the user closes or cancels the authorization window.
+    fn closed(&self) -> Pin<Box<dyn Future<Output = Result<(), String>> + Send + '_>>;
     fn cancel(&self);
+}
+
+struct LoginGuard<'a, W: AuthWindow> {
+    window: &'a W,
+    active: &'a Mutex<Option<CancellationToken>>,
+}
+impl<W: AuthWindow> Drop for LoginGuard<'_, W> {
+    fn drop(&mut self) {
+        self.window.cancel();
+        *self.active.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    }
 }
 
 pub fn callback_code(request: &str, state: &str) -> Option<String> {
@@ -39,32 +50,62 @@ pub fn callback_code(request: &str, state: &str) -> Option<String> {
 pub struct WebLogin<W> {
     window: W,
     client: reqwest::Client,
-    cancellation: CancellationToken,
+    api_base: Url,
+    cancellation: Mutex<Option<CancellationToken>>,
 }
 impl<W: AuthWindow> WebLogin<W> {
     pub fn new(window: W) -> Self {
+        Self::with_api_base(
+            window,
+            Url::parse("https://api.pencil.dev/").expect("valid API URL"),
+        )
+    }
+    /// Supply a local API server for offline integration tests.
+    pub fn with_api_base(window: W, api_base: Url) -> Self {
         Self {
             window,
+            api_base,
             client: reqwest::Client::new(),
-            cancellation: CancellationToken::new(),
+            cancellation: Mutex::new(None),
         }
     }
     pub fn cancel(&self) {
-        self.cancellation.cancel();
+        if let Some(token) = self
+            .cancellation
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+        {
+            token.cancel();
+        }
         self.window.cancel();
     }
     pub async fn sign_in(&self, device_id: &str, os_tag: &str) -> Result<TargetSnapshot, String> {
-        let result = tokio::select! {
-            result = self.sign_in_inner(device_id, os_tag) => result,
-            _ = self.cancellation.cancelled() => Err("登录已取消".into()),
+        let cancellation = CancellationToken::new();
+        {
+            let mut active = self.cancellation.lock().unwrap_or_else(|e| e.into_inner());
+            if active.is_some() {
+                return Err("正在添加账号".into());
+            }
+            *active = Some(cancellation.clone());
+        }
+        let _guard = LoginGuard {
+            window: &self.window,
+            active: &self.cancellation,
         };
-        self.window.cancel();
-        result
+        tokio::select! {
+            result = self.sign_in_inner(device_id, os_tag) => result,
+            _ = cancellation.cancelled() => Err("网页登录已取消或超时，原账号保持不变".into()),
+        }
     }
     async fn post(&self, path: &str, body: serde_json::Value) -> Result<serde_json::Value, String> {
         let response = self
             .client
-            .post(format!("https://api.pencil.dev/auth/device-auth/{path}"))
+            .post(
+                self.api_base
+                    .join(&format!("/auth/device-auth/{path}"))
+                    .map_err(|e| e.to_string())?,
+            )
             .timeout(Duration::from_secs(30))
             .json(&body)
             .send()
@@ -117,45 +158,40 @@ impl<W: AuthWindow> WebLogin<W> {
             }
             pairs.append_pair("state", &state);
         }
-        self.window.open(url.as_str()).await?;
-        let code = loop {
-            let (mut stream, _) = listener.accept().await.map_err(|e| e.to_string())?;
-            let mut request = Vec::new();
-            let mut buffer = [0u8; 8192];
+        self.window.open(url.as_str())?;
+        let callback = async {
             loop {
-                let count = stream.read(&mut buffer).await.map_err(|e| e.to_string())?;
-                if count == 0 {
-                    break;
+                let (stream, _) = listener.accept().await.map_err(|e| e.to_string())?;
+                let code = handle_callback(stream, Some(&state)).await;
+                if let Some(code) = code {
+                    break Ok::<String, String>(code);
                 }
-                request.extend_from_slice(&buffer[..count]);
-                if request.len() > 16384 {
-                    break;
-                }
-                if request.windows(4).any(|w| w == b"\r\n\r\n") {
-                    break;
-                }
-            }
-            if request.len() > 16384 || !request.windows(4).any(|w| w == b"\r\n\r\n") {
-                continue;
-            }
-            let code = callback_code(&String::from_utf8_lossy(&request), &state);
-            let body = if code.is_some() {
-                "Login received. You can return to Pencil Account Switcher."
-            } else {
-                "Invalid or expired login callback."
-            };
-            let status = if code.is_some() {
-                "200 OK"
-            } else {
-                "400 Bad Request"
-            };
-            let reply = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
-            let _ = stream.write_all(reply.as_bytes()).await;
-            if let Some(code) = code {
-                break code;
             }
         };
-        let result = self.post("token", serde_json::json!({"code": code, "codeVerifier": verifier, "deviceId": device_id, "clientType": "desktop"})).await?;
+        let code = tokio::select! {
+            biased;
+            result = callback => result?,
+            result = self.window.closed() => {
+                result?;
+                return Err("网页登录已取消或超时，原账号保持不变".into());
+            }
+        };
+        let exchange = self.post("token", serde_json::json!({"code": code, "codeVerifier": verifier, "deviceId": device_id, "clientType": "desktop"}));
+        // Keep rejecting callbacks while the accepted code is being exchanged.
+        let reject_duplicates = async {
+            loop {
+                match listener.accept().await {
+                    Ok((stream, _)) => {
+                        handle_callback(stream, None).await;
+                    }
+                    Err(error) => break Err::<(), String>(error.to_string()),
+                }
+            }
+        };
+        let result = tokio::select! {
+            result = exchange => result?,
+            result = reject_duplicates => { result?; return Err("无法打开本机登录回调".into()); }
+        };
         let email = result["email"]
             .as_str()
             .filter(|e| e.contains('@'))
@@ -185,4 +221,41 @@ impl<W: AuthWindow> WebLogin<W> {
             token: Some(token.into()),
         })
     }
+}
+
+async fn handle_callback(mut stream: TcpStream, state: Option<&str>) -> Option<String> {
+    let read = async {
+        let mut request = Vec::new();
+        let mut buffer = [0u8; 8192];
+        loop {
+            let count = stream.read(&mut buffer).await.ok()?;
+            if count == 0 {
+                return None;
+            }
+            request.extend_from_slice(&buffer[..count]);
+            if request.len() > 16384 {
+                return None;
+            }
+            if request.windows(4).any(|w| w == b"\r\n\r\n") {
+                return state
+                    .and_then(|state| callback_code(&String::from_utf8_lossy(&request), state));
+            }
+        }
+    };
+    let code = tokio::time::timeout(Duration::from_secs(5), read)
+        .await
+        .ok()
+        .flatten();
+    let (status, body) = if code.is_some() {
+        (
+            "200 OK",
+            "Login received. You can return to Pencil Account Switcher.",
+        )
+    } else {
+        ("400 Bad Request", "Invalid or expired login callback.")
+    };
+    let reply = format!("HTTP/1.1 {status}\r\nContent-Type: text/plain; charset=utf-8\r\nCache-Control: no-store\r\nConnection: close\r\nContent-Length: {}\r\n\r\n{body}", body.len());
+    let _ = tokio::time::timeout(Duration::from_secs(2), stream.write_all(reply.as_bytes())).await;
+    let _ = stream.shutdown().await;
+    code
 }
