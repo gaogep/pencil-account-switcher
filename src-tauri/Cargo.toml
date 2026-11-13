@@ -1,0 +1,19 @@
+[package]
+name = "switchboard-app"
+version = "1.0.1"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+switchboard-core = { path = "../crates/switchboard-core" }
+switchboard-platform = { path = "../crates/switchboard-platform" }
+tauri = { version = "2", features = ["tray-icon", "macos-private-api", "image-png"] }
+tauri-nspanel = "=2.1.0"
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+objc2-foundation = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
