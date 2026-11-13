@@ -26,14 +26,14 @@ fn private_directory(path: &Path) -> io::Result<()> {
     Ok(())
 }
 
-pub fn atomic_write(path: &Path, data: &[u8], private: bool) -> io::Result<()> {
+pub fn atomic_write(path: &Path, data: &[u8], _private: bool) -> io::Result<()> {
     let dir = path
         .parent()
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "missing parent directory"))?;
     fs::create_dir_all(dir)?;
     let mut file = tempfile::NamedTempFile::new_in(dir)?;
     #[cfg(unix)]
-    if private {
+    if _private {
         use std::os::unix::fs::PermissionsExt;
         file.as_file()
             .set_permissions(fs::Permissions::from_mode(0o600))?;
