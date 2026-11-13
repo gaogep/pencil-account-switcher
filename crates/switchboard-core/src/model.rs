@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(ts_rs::TS)]
 pub enum AuthState {
     Ok,
     Expired,
@@ -36,6 +37,7 @@ fn serialize_swift_date<S: Serializer>(
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(ts_rs::TS)]
 pub struct AccountRecord {
     #[serde(
         serialize_with = "serialize_uuid",
@@ -44,24 +46,31 @@ pub struct AccountRecord {
     pub id: Uuid,
     pub email: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub plan: Option<String>,
     pub is_current: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
     pub used_days: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional, type = "number")]
     pub total_days: Option<i64>,
     /// Seconds since 2001-01-01, matching Foundation's default Date encoding.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(serialize_with = "serialize_swift_date")]
+    #[ts(optional)]
     pub last_quota_update: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
     pub last_error: Option<String>,
     pub auth_state: AuthState,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(ts_rs::TS)]
 pub struct StoreFile {
+    #[ts(type = "number")]
     pub store_version: i64,
     pub accounts: Vec<AccountRecord>,
 }

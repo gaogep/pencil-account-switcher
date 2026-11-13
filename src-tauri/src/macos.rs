@@ -1,3 +1,4 @@
+mod ipc;
 mod panel;
 mod services;
 use std::sync::{
@@ -88,30 +89,33 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         })
         .build(app)?;
     panel::setup(app.handle())?;
+    ipc::publish(app.handle());
     if std::env::var("SWITCHBOARD_AUTO_OPEN").as_deref() == Ok("1") {
         panel::show(app.handle());
     }
     Ok(())
 }
-#[tauri::command]
-fn hide_panel(app: tauri::AppHandle) {
-    panel::hide(&app);
-}
-#[tauri::command]
-fn set_panel_height(app: tauri::AppHandle, h: f64) -> Result<(), String> {
-    panel::resize(&app, h)
-}
-#[tauri::command]
-fn quit_app(app: tauri::AppHandle) {
-    quit(&app);
-}
 pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_nspanel::init())
         .invoke_handler(tauri::generate_handler![
-            hide_panel,
-            set_panel_height,
-            quit_app
+            ipc::get_state,
+            ipc::add_account,
+            ipc::cancel_add_account,
+            ipc::import_current_login,
+            ipc::switch_to,
+            ipc::remove_account,
+            ipc::refresh_quotas,
+            ipc::set_launch_at_login,
+            ipc::check_updates,
+            ipc::start_update,
+            ipc::postpone_update,
+            ipc::install_update,
+            ipc::open_update_page,
+            ipc::hide_panel,
+            ipc::set_panel_height,
+            ipc::set_confirmation_open,
+            ipc::quit_app
         ])
         .setup(setup)
         .build(tauri::generate_context!())

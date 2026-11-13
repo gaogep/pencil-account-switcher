@@ -6,3 +6,5 @@ build/
 node_modules/
 target/
 *.log
+src-tauri/gen/
+ui/dist/
