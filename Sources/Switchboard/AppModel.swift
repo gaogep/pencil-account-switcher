@@ -121,6 +121,38 @@ final class AppModel: ObservableObject {
         ]
     }
 
+    /// 截图基线用（SWITCHBOARD_SNAPSHOT + SWITCHBOARD_DEMO）：把演示状态恢复成固定初值。
+    /// 额度时间固定，截图才能逐像素比对。只在演示模式生效，不落盘。
+    func resetDemoForSnapshot(quotaTime: Date) {
+        guard demoMode else { return }
+        feedbackTask?.cancel()
+        verifyTask?.cancel()
+        loadDemoAccounts()
+        accounts = accounts.map { record in
+            var record = record
+            record.lastQuotaUpdate = quotaTime
+            return record
+        }
+        persistenceBlocked = false
+        feedback = nil
+        feedbackCaption = nil
+        feedbackKind = .warning
+        liveEmail = nil
+        switchingTo = nil
+        refreshing = false
+        addingAccount = false
+        updateState = .idle
+        settings.launchAtLogin = false
+        route = .main
+    }
+
+    /// 截图基线用：模拟 store.json 损坏后的只读状态。
+    func blockPersistenceForSnapshot(_ notice: String) {
+        guard demoMode else { return }
+        persistenceBlocked = true
+        showFeedback(notice, kind: .warning, persistent: true)
+    }
+
     // MARK: - 持久化（~/Library/Application Support/Switchboard/store.json）
 
     private func load() {
