@@ -2,3 +2,17 @@
 name = "switchboard-platform"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+switchboard-core = { path = "../switchboard-core" }
+tokio = { version = "1", features = ["sync", "time"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+objc2-foundation = "0.3"
+objc2-service-management = "0.3"
+objc2-authentication-services = "0.3"
+block2 = "0.6"
+dispatch2 = "0.3"
+libc = "0.2"
