@@ -1,0 +1,22 @@
+{
+  "name": "switchboard-ui",
+  "private": true,
+  "version": "1.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode mock",
+    "dev:tauri": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.10.6",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.4",
+    "lucide-preact": "1.72.0",
+    "preact": "11.2.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "state": {
+    "accounts": [],
+    "liveEmail": null,
+    "unregisteredLiveEmail": null,
+    "switchingTo": null,
+    "refreshing": false,
+    "addingAccount": false,
+    "feedback": null,
+    "update": {
+      "status": "idle"
+    },
+    "launchAtLogin": false,
+    "version": "1.0.1",
+    "persistenceBlocked": false,
+    "demo": true
+  },
+  "route": "main",
+  "confirmRemoveEmail": null
+}

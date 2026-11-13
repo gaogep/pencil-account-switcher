@@ -4,15 +4,18 @@
   "version": "1.0.1",
   "identifier": "dev.switchboard.Switchboard",
   "build": {
-    "frontendDist": "panel"
+    "frontendDist": "../ui/dist",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeDevCommand": "npm run dev:tauri --workspace ui",
+    "beforeBuildCommand": "npm run build:ui"
   },
   "app": {
     "macOSPrivateApi": true,
     "windows": [],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-    },
-    "withGlobalTauri": true
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline'; img-src 'self' data:",
+      "devCsp": "default-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+    }
   },
   "bundle": {
     "active": true,

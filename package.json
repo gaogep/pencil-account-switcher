@@ -3,5 +3,14 @@
   "private": true,
   "dependencies": {
     "@electron/asar": "3.4.1"
+  },
+  "workspaces": [
+    "ui"
+  ],
+  "scripts": {
+    "dev:ui": "npm run dev --workspace ui",
+    "build:ui": "npm run build --workspace ui",
+    "types:ipc": "cargo run -p switchboard-core --bin export_bindings -- ui/src/generated",
+    "scenarios:ui": "python3 scripts/export_scenarios.py"
   }
 }

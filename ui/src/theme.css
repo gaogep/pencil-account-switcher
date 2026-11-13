@@ -1,0 +1,62 @@
+/* Theme constants from Sources/Switchboard/UI/AppKitCommon.swift. */
+:root {
+  --panel-width: 410px;
+  --panel-radius: 16px;
+  --panel-bg: #FAFAFA;
+  --card-white: #FCFCFC;
+  --card-stroke: #E4E4E7;
+  --current-card-bg: #EFEFF1;
+  --current-card-stroke: #E4E4E7;
+  --hairline: #EBEBED;
+  --title-text: #1C1C1F;
+  --text-primary: #27272A;
+  --text-secondary: #71717A;
+  --text-faint: #8B8B93;
+  --setting-value: #52525B;
+  --link-text: #27272A;
+  --accent: #1C1C1F;
+  --knob: #FAFAFA;
+  --progress-fill: var(--accent);
+  --check-icon: var(--accent);
+  --tag-text: #3F3F46;
+  --connected-text: #3F3F46;
+  --switch-btn-bg: #1C1C1F;
+  --switch-btn-text: #FAFAFA;
+  --add-btn-stroke: #D4D4D8;
+  --add-btn-hover-fill: #EFEFF1;
+  --add-btn-hover-stroke: #A1A1AA;
+  --add-btn-text: #1C1C1F;
+  --scroller-knob: #A1A1AA;
+  --header-action: #52525B;
+  --back-btn-bg: #EFEFF1;
+  --back-arrow: #3F3F46;
+  --remove-btn-bg: #F4F4F5;
+  --remove-btn-text: #52525B;
+  --remove-btn-icon: #A1A1AA;
+  --in-use-text: #3F3F46;
+  --progress-track-current: #D4D4D8;
+  --progress-track-other: #E4E4E7;
+  --switch-off-track: #D4D4D8;
+  --banner-fill: #EFEFF1;
+  --banner-ink: #1C1C1F;
+  --banner-muted: #71717A;
+  --warn-fill: #F4F4F5;
+  --warn-ink: #3F3F46;
+  --warn-tint: #52525B;
+  --avatar-0-bg: #E4E4E7;
+  --avatar-0-fg: #3F3F46;
+  --avatar-1-bg: #D4D4D8;
+  --avatar-1-fg: #27272A;
+  --avatar-2-bg: #EBEBED;
+  --avatar-2-fg: #52525B;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  color: var(--text-primary);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { cursor: default; opacity: .45; }
+:focus-visible { outline: 2px solid var(--header-action); outline-offset: 2px; }
+.panel { width: var(--panel-width); background: var(--panel-bg); border-radius: var(--panel-radius); overflow: hidden; }
