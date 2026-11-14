@@ -14,6 +14,11 @@
     "scenarios:ui": "python3 scripts/export_scenarios.py",
     "test:ui": "npm run test --workspace ui",
     "test:visual": "npm run test:visual --workspace ui --",
-    "test": "npm run test:ui"
+    "test": "npm run test:ui && npm run test:release",
+    "tauri": "tauri",
+    "test:release": "node --test scripts/*.test.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
   }
 }

@@ -55,3 +55,11 @@ T4.2 同时依据 Swift 的结构补齐主页/管理页末尾的空白排列项�
 - 新增 `platform-it`（独立主线程测试入口，避免 Cocoa 调度死锁）：只读原生路径/进程/自启，凭据与文件锁测试全部在临时目录内执行；不改变真实自启或 Pen 会话。另提供 Windows 辅助脚本夹具集成测试。
 - 本机验证：mac Clippy `-D warnings`、Rust 26 个 core 测试 + 4 个安装器测试 + platform-it 通过。Windows 本机仅交叉编译检查，辅助脚本实际执行由 Windows CI 验证。
 - 前一提交 f9d2710 的 Windows/mac Rust、前端和 Swift CI 通过；mac 视觉作业因 GitHub `macos-14-arm64-us-default is not supported` 在分配前取消，已改为可用的 `macos-latest`，未将取消计作通过。
+
+## P5 开发补充：T5.2
+
+- `release.yml` 改为 macOS arm64 与 Windows x64 矩阵，产出原命名的 mac DMG/ZIP 和 Windows currentUser NSIS EXE；手动运行创建草稿，tag 推送走发布路径，禁止覆盖已公开版本。
+- 新增 Node Ed25519 签名器，使用原 `UPDATE_SIGNING_KEY`（仓库已配置），签名前核对派生公钥。发布汇总会再次校验完整资产名、签名和版本，避免老 mac 客户端选错 Windows 包。
+- 与 Swift 的同文件/同测试 seed 对比已完成：本机 CryptoKit 连续签名本身字节不稳定，新旧签名格式均为无换行的 base64 64 字节 Ed25519 签名，互相验签均通过；不以签名字节相同作为兼容性条件。
+- 应用/配置/前端版本设为 2.0.0，锁定 Tauri CLI 2.12.4。`npm test` 包含 UI 和发布工具测试。已在本机完成 arm64 `.app`、DMG 和兼容 ZIP 打包，LSUIElement/架构检查通过；显式 ad-hoc 签名后，完整包 codesign 严格校验通过，校验也已加入打包入口。
+- Windows L2 锁文件测试发现 MoveFileEx 可能返回 ACCESS_DENIED（5），已在 T5.1 补上和 SHARING_VIOLATION（32）相同的有限重试；Windows/mac 视觉 CI 均已执行通过，Windows 锁文件修复正在重跑。

@@ -3829,7 +3829,7 @@ dependencies = [
 
 [[package]]
 name = "switchboard-app"
-version = "1.0.1"
+version = "2.0.0"
 dependencies = [
  "objc2",
  "objc2-app-kit",
