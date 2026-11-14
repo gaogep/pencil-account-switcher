@@ -1,13 +1,30 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/preact';
+import { act, fireEvent, render, screen } from '@testing-library/preact';
 import fixture from '../../public/scenarios/main.json';
 import type { ViewState } from '../generated/ViewState';
-import { AuthBadge, CurrentAccountCard, InkSwitch, OtherAccountRow, RefreshButton, StatusBanner, UpdateBanner, operationLocks, stableHash } from '../components';
+import { AccountEmail, AuthBadge, Avatar, CurrentAccountCard, InkSwitch, OtherAccountRow, RefreshButton, StatusBanner, UpdateBanner, operationLocks, stableHash } from '../components';
 import { MainScreen, ManageScreen, SettingsScreen } from '../screens';
 import { ConfirmDialog } from '../ConfirmDialog';
 const state = () => structuredClone(fixture.state) as ViewState;
 const actions = () => ({ send: vi.fn(), navigate: vi.fn() });
 describe('component state and actions', () => {
+  it('truncates the middle of a narrow email and restores it after resize', () => {
+    const email = 'abcdef@example.test'; let width = 80; let resize = () => {};
+    const observer = globalThis.ResizeObserver;
+    const bounds = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({ width }) as DOMRect);
+    const canvas = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({ measureText: (text: string) => ({ width: Array.from(text).length * 10 }) } as CanvasRenderingContext2D);
+    vi.stubGlobal('ResizeObserver', class { constructor(callback: () => void) { resize = callback; } observe() {} disconnect() {} });
+    try {
+      render(<AccountEmail email={email} />);
+      expect(screen.getByTitle(email)).toHaveTextContent('abcd…est');
+      expect(screen.getByTitle(email)).toHaveAttribute('aria-label', email);
+      width = 1000; act(resize); expect(screen.getByTitle(email)).toHaveTextContent(email);
+    } finally { bounds.mockRestore(); canvas.mockRestore(); vi.stubGlobal('ResizeObserver', observer); }
+  });
+  it.each([34, 36] as const)('preserves the %ipx avatar dimensions and font size in Preact', size => {
+    const { container } = render(<Avatar email="alex.chen@gmail.com" size={size} />);
+    expect(container.firstElementChild).toHaveStyle({ width: `${size}px`, height: `${size}px`, fontSize: `${size === 36 ? 12 : 11}px` });
+  });
   it.each(['ok', 'expired', 'unknown'] as const)('renders authentication state %s', authState => {
     render(<AuthBadge state={authState} />); expect(screen.getByText({ ok: '生效中', expired: '已失效', unknown: '待确认' }[authState])).toBeVisible();
   });

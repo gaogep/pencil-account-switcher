@@ -2,8 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [main]
+    branches: [main, t4-3-windows-login, "t5-*", "t6-*"]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   rust:

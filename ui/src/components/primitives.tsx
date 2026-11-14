@@ -26,7 +26,7 @@ export function PillButton({ children, onClick, disabled, label, title, icon, va
   return <button type="button" class={`pill-button pill-${variant}`} onClick={onClick} disabled={disabled} aria-label={label} title={title}>{icon}{children}</button>;
 }
 export function QuietActionButton({ children, onClick, disabled, label, title, icon }: ButtonProps) {
-  return <button type="button" class="quiet-button" onClick={onClick} disabled={disabled} aria-label={label} title={title}>{icon}{children}</button>;
+  return <button type="button" class="quiet-button" onClick={onClick} disabled={disabled} aria-label={label} title={title}>{icon}<span class="quiet-label">{children}</span></button>;
 }
 export function IconButton({ label, onClick, disabled, children }: { label: string; onClick?: () => void; disabled?: boolean; children: ComponentChildren }) {
   return <button type="button" class="icon-button" onClick={onClick} disabled={disabled} aria-label={label} title={label}>{children}</button>;
@@ -56,6 +56,6 @@ export function Avatar({ email, size = 34 }: { email: string; size?: 34 | 36 }) 
   const local = email.split('@').filter(Boolean)[0] ?? email;
   const letters = Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(local), item => item.segment).slice(0, 2).join('').toUpperCase();
   const palette = stableHash(email) % 3;
-  return <span class="avatar" aria-hidden="true" style={{ width: size, height: size, fontSize: size === 36 ? 12 : 11, background: `var(--avatar-${palette}-bg)`, color: `var(--avatar-${palette}-fg)` }}>{letters}</span>;
+  return <span class="avatar" aria-hidden="true" style={{ width: `${size}px`, height: `${size}px`, fontSize: `${size === 36 ? 12 : 11}px`, background: `var(--avatar-${palette}-bg)`, color: `var(--avatar-${palette}-fg)` }}>{letters}</span>;
 }
 export function Hairline() { return <div class="hairline" aria-hidden="true" />; }

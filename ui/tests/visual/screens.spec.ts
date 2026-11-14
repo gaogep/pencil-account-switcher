@@ -26,6 +26,12 @@ for (const name of scenarios) test(name, async ({ page }, info) => {
   }
   await page.evaluate(() => document.fonts.ready);
   const panel = page.locator('.panel');
+  for (const avatar of await panel.locator('.avatar').all()) {
+    const size = await avatar.evaluate(el => el.closest('.current-account') ? 36 : 34);
+    await expect(avatar).toHaveCSS('width', `${size}px`);
+    await expect(avatar).toHaveCSS('height', `${size}px`);
+    await expect(avatar).toHaveCSS('font-size', `${size === 36 ? 12 : 11}px`);
+  }
   const bounds = await panel.boundingBox();
   expect(bounds?.width).toBe(410);
   expect(await page.locator('.screen-content').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
@@ -33,7 +39,7 @@ for (const name of scenarios) test(name, async ({ page }, info) => {
   // Only the documented SF Symbols -> Lucide replacements and the repaired
   // import label are excluded. No text, rows, cards or dynamic layout is masked.
   const excluded = await panel.locator(name === 'main-unregistered-live' ? 'svg, .unregistered .link-button' : 'svg').evaluateAll(elements => elements.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }));
-  const actual = await panel.screenshot({ animations: 'disabled' });
+  const actual = await panel.screenshot({ animations: 'disabled', omitBackground: true });
   writeFileSync(join(reportDir, `${name}-actual.png`), actual);
   await info.attach('current', { body: actual, contentType: 'image/png' });
   expect(errors).toEqual([]);

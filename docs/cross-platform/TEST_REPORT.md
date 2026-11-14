@@ -1,4 +1,100 @@
-# 测试报告：跨平台重构（Round 4 复测：P2 `T2.1–T2.3` 运行态与 `I-019` 修复验收）
+# 测试报告：跨平台重构（Round 5 复测：`I-020` 修复验收 & 全量回归）
+
+- **测试日期**：2026-11-14
+- **被测分支 / 提交**：`t4-3-windows-login` @ `aa46556` + 本地工作区 `I-020` 修复（`ui/src/components/{accounts.tsx,banners.tsx,components.css,primitives.tsx}`、`ui/src/{screens.css,screens.tsx}`、`ui/src/tests/{app.test.tsx,components.test.tsx,setup.ts}`、`ui/tests/visual/screens.spec.ts`；`Tests/baseline/` 0 改动）
+- **测试环境**：macOS（Apple Silicon `aarch64-apple-darwin`，主屏 `1512×982`、`visibleFrame={{0, 75}, {1512, 874}}`）、Rust / Cargo + `cargo-xwin 0.23.1`（`x86_64-pc-windows-msvc` 交叉编译静态检查）、Node.js v24.22.2、Vitest `5.1.0` + jsdom `31.0.1`、Playwright `1.65.1`（WebKit `v2388`）、Swift 测试基线、LLDB + AppKit/WKWebView
+- **参考文档**：[DEV_PROGRESS.md](DEV_PROGRESS.md)、[TEST_PLAN.md](TEST_PLAN.md)、[DEV_PLAN.md](DEV_PLAN.md)、[DESIGN.md](DESIGN.md)、[ISSUES.md](ISSUES.md)
+
+---
+
+## Round 5 复测总结论
+
+- **总体结论**：**macOS 范围及跨端构建 / L1 / L3 / L4 全部通过 ✅；余 `I-017` L2 `platform-it` 与 Windows 真机运行/基线待测 ⚠️**
+  1. **`I-020` 修复验收通过（L4 WebKit 22/22 全绿 & L3 Vitest 29/29 全绿）**：
+     - **L4 Playwright WebKit（`v2388`，`410×1000 @2x`）**：**22/22 passed**（`10.3s`）。除 `manage-confirm-remove` 按 `I-002` 仅核对文案与按钮顺序外，**全部 21 个对比场景均实现 0 尺寸差异**，`pixelmatch`（阈值 `0.1`，允许上限 `1.00%`）差异率位于 **`0.27%`–`1.00%`**：最低为 `main-single` `0.27%`（`1522 / 565800 = 0.2690%`），最高为 `manage-expired` **`1.00%`**（`8151 / 820000 = 0.9940%` 原始比值，严格通过但紧贴 1% 阈值边界，建议后续改版持续关注余量）。
+     - **人工视觉抽检（`ui/visual-report/macos/*.png`）**：已核验 `main`、`main-empty`、`main-feedback-long`、`main-unregistered-live`、`manage`、`manage-expired`、`manage-confirm-remove`、`settings` 及对应 `-diff.png`：`36×36` / `34×34` 头像圆圈与字号恢复正常、`AccountEmail` 中段省略（如 `alex.cr…ud.com`）对齐 Swift、透明背景截图一致、`.manage-card .hairline { width: 0 }` 与 `panel-manage*.png` 原图一致，`Tests/baseline/macos/` 未改动。
+     - **L3 Vitest + jsdom**：**2 文件 29/29 passed**（`components.test.tsx` 24 + `app.test.tsx` 5），新增 `AccountEmail` 窄幅截断/恢复及 `Avatar` `34px`/`36px` 样式与字号断言。
+  2. **macOS `switchboard-app` 真机 `WKWebView` 运行态复测通过（隔离 `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1` + `vite`）**：
+     - 实际运行 `MainScreen`（`h=547`，`topGap=12.0`，3 账号头像实测 `36px/12px` 与 `34px/11px`）→ `SettingsScreen`（`h=345`）→ `ManageScreen`（`h=500`，3 条账号行、3 头像 `34px/11px`），高度与 Swift `panel-{main,settings,manage}.png` 逻辑尺寸逐点一致。
+     - `ConfirmDialog`（`inert=true`，按钮 `["移除 jamie.work@outlook.com", "取消"]`）、`UI-PN-03` Esc 行为、`UI-PN-04` 切至 Finder 保持 `VIS=1 KEY=0`、`UI-PN-05` `Reopen` 重置回 `MainScreen`（`h=547`）以及 `quit_app`（退出码 `0`）均通过。
+  3. **Rust、Windows 交叉编译、生成物与 Swift 基线全绿**：
+     - `cargo fmt --all --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings`、`cargo xwin clippy --workspace --all-targets --target x86_64-pc-windows-msvc --locked -- -D warnings`（Rust 0 警告）、`cargo test --workspace --locked`（`switchboard-core` **26/26 passed**）、`cargo build --locked -p switchboard-app`、`npm run build:ui`、`npm run types:ipc && npm run scenarios:ui`（0 差异）与 `./Tests/run.sh`（Swift `16/16 + 156/156 = 172/172`）全部通过。
+  4. **未闭合边界（非 macOS 阻断，待后续阶段/Windows 真机）**：
+     - **`I-017`（L2 缺口）**：`crates/switchboard-platform` 尚未定义 `platform-it` feature 与 L2 集成测试（仍 `0 tests`）。
+     - **Windows 真机与视觉基线**：`T4.1`–`T4.3` 尚待 Windows 实机（或 VM / GitHub Actions `windows-latest`）执行 `cargo test`、`pen-probe` 实跑、托盘/DPI/四边任务栏/InPrivate 登录验收及人工确认后生成 `Tests/baseline/windows/`。
+
+### Round 5 复测执行明细
+
+| 检查项 | 命令 / 对象 | 结果 | 详情 |
+|---|---|---|---|
+| 前端 TS + Vite 构建 | `npm run build:ui` | ✅ PASS | `tsc --noEmit` 与 `vite build`（`153ms`）成功 |
+| L3 前端单测（Vitest） | `npm test`（`ui/src/tests/*.test.tsx`） | ✅ PASS | **2 文件 29/29 passed**（`components.test.tsx` 24 + `app.test.tsx` 5；含 `Avatar` `34/36px` 样式及 `AccountEmail` 截断/恢复回归） |
+| L4 WebKit 视觉回归（`T3.4`） | `npm run test:visual`（WebKit `v2388`，`410×1000 @2x`） | ✅ PASS | **22/22 passed**（`10.3s`）：21 场景 0 尺寸差异，像素差异 `0.27%`–`1.00%`（`manage-expired` 为 `8151/820000 = 0.9940%`，紧贴 1% 阈值）；`manage-confirm-remove` 文案与按钮顺序通过；基线未修改 |
+| Rust 格式与双端 Clippy | `cargo fmt --all --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings`、`cargo xwin clippy --workspace --all-targets --target x86_64-pc-windows-msvc --locked -- -D warnings` | ✅ PASS | macOS 与 Windows x64 目标 Rust Clippy 均 **0 警告** |
+| Rust 工作区单测与壳构建 | `cargo test --workspace --locked`、`cargo build --locked -p switchboard-app` | ✅ PASS（部分 0 用例） | `switchboard-core` **26/26 passed**；`switchboard-platform`/`switchboard-app`/`pen-probe` 仍 **0 tests**（`I-017`） |
+| 生成物与 Swift 基线 | `npm run types:ipc && npm run scenarios:ui`、`./Tests/run.sh` | ✅ PASS | `ui/src/generated/` 与 `ui/public/scenarios/` 0 差异；Swift `16/16 + 156/156 = 172/172` |
+| macOS `WKWebView` 实机复测 | `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1 ./target/debug/switchboard-app` + `vite` + `lldb` | ✅ PASS | `Main`(`h=547`, 头像 `36px/12px` & `34px/11px`) → `Settings`(`h=345`) → `Manage`(`h=500`, 3 头像 `34px/11px`)、`ConfirmDialog`(`inert=true`)、`UI-PN-03..05`、`quit_app` 退出码 `0` |
+
+---
+
+# 历史归档：Round 5 初测（P3 `T3.3–T3.4` + P4 `T4.1–T4.3` 初次验收）
+
+- **测试日期**：2026-11-14
+- **被测分支 / 提交**：`t4-3-windows-login` @ `aa46556`（含 `ba3d1b3` → `fb921d9` `T3.3` → `f7c1312` `T3.4` → `0d7cf7c` `T4.1` → `99ab70f` `T4.2` → `aa46556` `T4.3`）
+- **测试环境**：macOS（Apple Silicon `aarch64-apple-darwin`，主屏 `1512×982`、`visibleFrame={{0, 75}, {1512, 874}}`）、Rust / Cargo + `cargo-xwin 0.23.1`（`x86_64-pc-windows-msvc` 交叉编译静态检查）、Node.js v24.22.2、Vitest `5.1.0` + jsdom `31.0.1`、Playwright `1.65.1`（WebKit `v2388`）、Swift 测试基线、LLDB + AppKit/WKWebView
+- **参考文档**：[DEV_PROGRESS.md](DEV_PROGRESS.md)、[TEST_PLAN.md](TEST_PLAN.md)、[DEV_PLAN.md](DEV_PLAN.md)、[DESIGN.md](DESIGN.md)、[ISSUES.md](ISSUES.md)
+
+---
+
+## Round 5 初测总结论
+
+- **总体结论**：**不通过（L4 WebKit 视觉回归 21/22 失败且发现 `Avatar` 样式缺陷 `I-020`；L1/L3/macOS 运行态 `T3.3` 与 `cargo xwin clippy` 均绿，余 L2 `platform-it` 与 Windows 真机待测）** ❌⚠️
+  1. **构建、静态检查、L1 Core、L3 Vitest、生成物与 Swift 基线全部通过**：
+     - Rust：`cargo fmt --all --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings`、Windows x64 交叉编译 `cargo xwin clippy --workspace --all-targets --target x86_64-pc-windows-msvc --locked -- -D warnings`（Rust 0 警告）、`cargo build --locked -p switchboard-app` 与 `cargo test --workspace --locked`（`switchboard-core` `26/26 passed`）全部通过。
+     - 前端与基线：`npm run build:ui`（`tsc --noEmit && vite build`）、`npm test`（Vitest **2 文件 26/26 通过**）、`npm run types:ipc && npm run scenarios:ui`（0 差异）与 `./Tests/run.sh`（Swift `16/16 + 156/156 = 172/172`）全部通过。
+  2. **`T3.3` macOS 实机运行态交互验收通过（隔离 `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1`）**：
+     - 真机验证 `MainScreen`（`h=545`）→ `SettingsScreen`（`h=339`）→ `ManageScreen`（`h=479`，3 条账号行）导航与 `ResizeObserver` 高度联动（`frame.size` 实时贴合且 `topGap=12.0` 不飘移）。
+     - 验证 `ConfirmDialog`（`[role="alertdialog"]`，背景 `inert=true`，按钮顺序 `["移除 jamie.work@outlook.com", "取消"]`）、`UI-PN-03` Esc 仅关确认框、再按 Esc 收起面板、`UI-PN-04` 确认框打开期间（`set_confirmation_open(true)`）切到 Finder 保持 `VIS=1 KEY=0`、`UI-PN-05` `Reopen` 重新显示并复位主页（`h=545`），以及页脚「退出应用」触发 `quit_app` 正常退出（状态码 `0`）。
+  3. **阻塞问题 `I-020`（🔴 不通过）：L4 WebKit 视觉回归 21/22 尺寸不符且 `Avatar` 头像塌陷**：
+     - 实际运行 `npm run test:visual`（Playwright WebKit `v2388`，`410×1000 @2x`）：仅 `manage-confirm-remove`（按 `I-002` 例外跳过尺寸与像素对比）通过，**其余 21/22 场景全部在 `screens.spec.ts:50-52` 的严格尺寸断言失败**，提前返回导致 **0/21 完成 `pixelmatch` 像素比对**，`.github/workflows/test.yml` 的 `macos-14` `visual` job 将直接失败。
+     - **根因 A（代码缺陷 — `Avatar` 内联无单位数值在 Preact 11 被丢弃）**：[primitives.tsx:59](../../ui/src/components/primitives.tsx#L59) 向 `style` 传入无单位数字 `{ width: size, height: size, fontSize: size === 36 ? 12 : 11 }`；`preact@11.2.0` 已移除核心对数值样式自动补 `"px"` 的处理，WebKit 实际渲染丢失了 `width`/`height`/`fontSize`，导致所有账号头像从 `36×36` / `34×34` 塌陷成约 `16×14.4px` 小块且 34px 头像字号误用 `12px`。直接造成 `manage` / `manage-expired` 少 `-18pt`（`-36px@2x`）、`main-single` 少 `-6pt`（`-12px@2x`）。
+     - **根因 B（CSS 行高与空态间距偏差）**：14 个 `430px` 限高 `main-*` 场景均差 `-2pt`（`-4px@2x`，`brand-header` 68 vs 69、`main-footer` 47 vs 48，源于 `line-height: 1.2` 与 AppKit `NSTextField` 固有行高差）；3 个 `settings*` 场景均差 `-4pt`（`-8px@2x`）；`main-empty` 多出 `+6pt`（`+12px@2x`，空态起点 `y=97` vs 基线 `y=90`）。
+  4. **Windows `T4.1–T4.3` 代码走查与未闭合项**：
+     - `T4.1`–`T4.3` 静态代码结构、ICO 多尺寸资源（`app.ico` 16/32/48/128/256、`tray-light/dark.ico` 16/20/24/32 均为 32bpp RGBA PNG）、`image-ico` 特性、四边任务栏定位与 DPI 换算、`WM_CLOSE` 多窗口判定及 `.incognito(true)` 独立登录窗口均对齐 [DESIGN.md](DESIGN.md) 与 [DEV_PLAN.md](DEV_PLAN.md)。
+     - 两条非阻塞观察：(a) [windows.rs:37](../../crates/switchboard-platform/src/windows.rs#L37) `startup_disabled()` 仅匹配首字节 `3 | 7`（常见任务管理器禁用值），按位判断奇数禁用状态或 `!= 2 && != 6` 会更稳妥；(b) [panel.rs:178-181](../../src-tauri/src/windows/panel.rs#L178-L181) 在 `AUTO_OPEN=1` 首次 `show()` 时若 DOM 尚未挂载，`--panel-max-height` 由随后 `ResizeObserver -> resize -> position` 补写（可正常工作，但显式由 `initialization_script` 或 `resize` 保证更直接）。
+     - **仍待后续验证**：`I-017`（L2 `crates/switchboard-platform` `platform-it` 集成测试仍 `0 tests`，L3 `components.test.tsx` 亦待补 `Avatar` 尺寸断言）与全部 Windows 真机运行态（`P-FS-02`、`P-AS-02/03`、`P-PR-01..05`、多 DPI/四边任务栏/托盘切换/InPrivate 登录/`Tests/baseline/windows/`）。
+
+---
+
+## Round 5 初测执行明细
+
+| 检查项 | 命令 / 对象 | 结果 | 详情 |
+|---|---|---|---|
+| Rust 格式与 Clippy（macOS） | `cargo fmt --all --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ PASS | 0 警告 / 0 错误 |
+| Windows x64 交叉编译检查 | `cargo xwin clippy --workspace --all-targets --target x86_64-pc-windows-msvc --locked -- -D warnings` | ✅ PASS | Rust Clippy 0 警告（MSVC SDK/CRT 编译通过；未在 Windows 执行） |
+| Rust 工作区单测与构建 | `cargo test --workspace --locked`、`cargo build --locked -p switchboard-app` | ✅ PASS（部分 0 用例） | `switchboard-core` **26/26 passed**；`switchboard-platform`、`switchboard-app`、`pen-probe` 仍为 **0 tests**（`I-017`） |
+| 前端 TS + Vite 构建 | `npm run build:ui` | ✅ PASS | `tsc --noEmit` 与 `vite build` 成功 |
+| L3 前端单测（Vitest） | `npm test`（`ui/src/tests/*.test.tsx`） | ✅ PASS | **2 文件 26/26 passed**（`app.test.tsx` 5 条、`components.test.tsx` 21 条；覆盖 `TEST_PLAN §5.1` 矩阵，缺 `Avatar` 像素尺寸断言） |
+| 生成物一致性核验 | `npm run types:ipc && npm run scenarios:ui && git status --short` | ✅ PASS | `ui/src/generated/` 与 `ui/public/scenarios/`（22 场景）0 差异 |
+| Swift 基线对照 | `./Tests/run.sh` | ✅ PASS | `UpdateLogicTests` `16/16` + `RegressionTests` `156/156`（`172/172`） |
+| `T3.3` macOS 实机 E2E | `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1 ./target/debug/switchboard-app` + `lldb` / `WKWebView` | ✅ PASS | 验证 `MainScreen`(`h=545`) → `SettingsScreen`(`h=339`) → `ManageScreen`(`h=479`) 路由与高度跟随、`ConfirmDialog`(`inert=true`)、`UI-PN-03/04/05`、`quit_app`（退出码 `0`） |
+| L4 WebKit 视觉回归（`T3.4`） | `npm run test:visual`（Playwright WebKit `v2388`，22 场景） | ❌ FAIL（`I-020`） | **1 passed**（`manage-confirm-remove` 跳过比对）/ **21 failed**（尺寸不符提前返回，未执行 `pixelmatch`）：14 个 `main-*` 差 `-4px`（`-2pt`）、3 个 `settings*` 差 `-8px`（`-4pt`）、`main-empty` 差 `+12px`（`+6pt`）、`main-single` 差 `-12px`（`-6pt`）、`manage`/`manage-expired` 差 `-36px`（`-18pt`）；且发现 `Avatar` 尺寸塌陷 |
+| `T4.1–T4.3` Windows 代码与图标走查 | `crates/switchboard-platform/src/windows*`、`src-tauri/src/windows*`、`src-tauri/icons/*.ico`、`.github/workflows/test.yml` | ⚠️ 静态对齐，待真机 | 多尺寸 ICO 与 `image-ico` 有效，4 边任务栏/DPI/`WM_CLOSE`/`incognito(true)` 与设计一致；CI `macos-14` `visual` job 受 `I-020` 阻塞，Windows 真机测试与基线建立待运行 |
+
+### L4 WebKit 视觉尺寸差异明细（`I-020`）
+
+| 场景组 | 场景数 | 基线尺寸（`@2x`） | WebKit 实际（`@2x`） | 差值（物理 / 逻辑） | 根因定位 |
+|---|---|---|---|---|---|
+| 限高主面板（`main` 等 14 个） | 14 | `820×1094` / `1188` / `1238` | `820×1090` / `1184` / `1234` | `-4px`（`-2.0pt`） | 内容区均夹紧 `430pt`；`brand-header`（`68` vs `69`）与 `main-footer`（`47` vs `48`）受 `line-height: 1.2` 影响各少 `1pt` |
+| `settings` / `settings-launch-on` / `settings-update-available` | 3 | `820×690` / `834` | `820×682` / `826` | `-8px`（`-4.0pt`） | `nav-header`、设置项双行标题与 `settings-footer` 行高略紧于 AppKit `NSTextField` |
+| `main-single` | 1 | `820×690` | `820×678` | `-12px`（`-6.0pt`） | `Avatar size={36}` 尺寸被 Preact 11 丢弃塌陷（`16×14.4px`）+ `line-height: 1.2` 偏差 |
+| `manage` / `manage-expired` | 2 | `820×1000` | `820×964` | `-36px`（`-18.0pt`） | 3 行账号 `Avatar size={34}` 均塌陷为 `16×14.4px`（占主要缩水）+ `line-height: 1.2` 偏差 |
+| `main-empty` | 1 | `820×636` | `820×648` | `+12px`（`+6.0pt`） | WebKit 空态符号起止位置比基线低 `7pt`（`y=97` vs `y=90`），抵消页脚 `-1pt` 后净高 `+6pt` |
+| `manage-confirm-remove` | 1 | `520×538` | `820×964` | 例外跳过 | `screens.spec.ts:41-44` 仅校验弹窗文案与按钮顺序（`I-002`） |
+
+---
+
+# 历史归档：Round 4（P2 `T2.1–T2.3` 运行态与 `I-019` 修复验收）
 
 - **测试日期**：2026-11-14
 - **被测分支 / 提交**：`t3-2-component-library` @ `724adc2` + 本地工作区未提交修复（`src-tauri/src/macos.rs`、`src-tauri/src/macos/panel.rs`、`ui/index.html`、`ui/src/components/components.css`）

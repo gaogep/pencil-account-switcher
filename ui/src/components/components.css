@@ -1,32 +1,36 @@
-/* Dimensions and tokens mirror AppKitCommon.swift and Screens.swift. */
-.panel { font-size: 12px; line-height: 1.2; }
+/* Dimensions and tokens mirror AppKitCommon.swift and Screens.swift.
+   Explicit line heights match NSTextField fitting sizes at each font size. */
+.panel { font-size: 12px; line-height: 15px; }
 .panel h1, .panel p { margin: 0; }
 .panel button { appearance: none; border: 0; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; white-space: nowrap; }
 .panel svg { flex-shrink: 0; vertical-align: middle; }
 .brand-header, .nav-header { display: flex; align-items: center; padding: 20px 22px 16px; gap: 10px; }
 .brand-header img { flex-shrink: 0; border-radius: 9px; }
 .brand-heading, .nav-heading { min-width: 0; }
-.brand-heading h1 { font-size: 14px; font-weight: 700; color: var(--title-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.brand-heading p { margin-top: 2px; font-size: 11px; color: var(--text-secondary); }
+.brand-heading h1 { font-size: 14px; line-height: 17px; font-weight: 700; color: var(--title-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand-heading p { margin-top: 2px; font-size: 11px; line-height: 14px; color: var(--text-secondary); }
 .header-actions { display: flex; gap: 14px; align-items: center; margin-left: auto; flex-shrink: 0; color: var(--header-action); }
 .nav-header { gap: 12px; padding-bottom: 18px; }
-.nav-heading h1 { font-size: 15px; font-weight: 700; color: var(--title-text); }
-.nav-heading p { font-size: 11px; margin-top: 3px; color: var(--text-secondary); }
+.nav-heading h1 { font-size: 15px; line-height: 19px; font-weight: 700; color: var(--title-text); }
+.nav-header .header-actions > span { font-size: 11px; line-height: 14px; color: var(--text-secondary); }
+.nav-heading p { font-size: 11px; line-height: 14px; margin-top: 3px; color: var(--text-secondary); }
 .panel .back-button { width: 30px; height: 30px; padding: 6px; border-radius: 8px; color: var(--back-arrow); background: var(--back-btn-bg); }
 .panel .icon-button { background: transparent; padding: 2px; width: 19px; height: 19px; color: var(--header-action); }
-.panel .link-button { color: var(--link-text); background: transparent; padding: 0; font-size: 11px; font-weight: 600; }
-.panel .pill-button { border-radius: 6px; padding: 6px 8px; font-size: 11px; font-weight: 600; }
+.panel .link-button { color: var(--link-text); background: transparent; padding: 0 2px; font-size: 11px; line-height: 14px; font-weight: 600; }
+.panel .pill-button { border-radius: 6px; padding: 6px 10px; font-size: 11px; line-height: 14px; font-weight: 600; }
 .pill-primary { color: var(--switch-btn-text); background: var(--switch-btn-bg); }
-.pill-remove { color: var(--remove-btn-text); background: var(--remove-btn-bg); font-weight: 400 !important; font-size: 10px !important; padding-block: 7px !important; }
+.pill-remove { color: var(--remove-btn-text); background: var(--remove-btn-bg); font-weight: 400 !important; font-size: 10px !important; line-height: 13px; padding-block: 7px !important; }
 .pill-muted { color: var(--text-secondary); background: var(--switch-off-track); }
-.panel .quiet-button { border: 1px solid var(--add-btn-stroke); border-radius: 6px; padding: 5px 7px; background: var(--card-white); color: var(--add-btn-text); font-size: 10px; font-weight: 600; }
-.panel .outline-button { width: 100%; height: 38px; border: 1px solid var(--add-btn-stroke); border-radius: 8px; background: var(--card-white); color: var(--add-btn-text); font-size: 12px; font-weight: 600; }
-.panel .quiet-button:hover:not(:disabled), .panel .outline-button:hover:not(:disabled) { background: var(--add-btn-hover-fill); border-color: var(--add-btn-hover-stroke); }
+.panel .quiet-button { box-shadow: 0 0 0 .5px var(--add-btn-stroke), inset 0 0 0 .5px var(--add-btn-stroke); border-radius: 6px; padding: 6px 8px; gap: 2px; background: var(--card-white); color: var(--add-btn-text); font-size: 10px; line-height: 13px; font-weight: 600; }
+.panel .outline-button { width: 100%; height: 38px; box-shadow: 0 0 0 .5px var(--add-btn-stroke), inset 0 0 0 .5px var(--add-btn-stroke); border-radius: 8px; background: var(--card-white); color: var(--add-btn-text); font-size: 12px; line-height: 15px; font-weight: 600; }
+.quiet-label { padding: 0 2px; position: relative; top: -.75px; }
+.panel .quiet-button svg { width: 13.5px; height: 14.5px; }
+.panel .quiet-button:hover:not(:disabled), .panel .outline-button:hover:not(:disabled) { background: var(--add-btn-hover-fill); box-shadow: 0 0 0 .5px var(--add-btn-hover-stroke), inset 0 0 0 .5px var(--add-btn-hover-stroke); }
 .panel .ink-switch { width: 36px; height: 22px; padding: 2px; border-radius: 11px; background: var(--switch-off-track); justify-content: flex-start; }
 .panel .ink-switch.is-on { background: var(--accent); }
 .ink-switch span { width: 18px; height: 18px; border-radius: 50%; background: var(--knob); display: block; }
 .ink-switch.is-on span { transform: translateX(14px); }
-.auth-badge { display: inline-block; border-radius: 4px; padding: 3px 7px; font-size: 10px; font-weight: 600; flex-shrink: 0; white-space: nowrap; }
+.auth-badge { display: inline-block; border-radius: 4px; padding: 3px 7px; font-size: 10px; line-height: 13px; font-weight: 600; flex-shrink: 0; white-space: nowrap; }
 .auth-ok { background: var(--back-btn-bg); color: var(--connected-text); }
 .auth-expired { background: var(--warn-fill); color: var(--warn-tint); }
 .auth-unknown { background: var(--remove-btn-bg); color: var(--text-secondary); }
@@ -34,36 +38,38 @@
 .quota-track { background: var(--progress-track-other); border-radius: 2px; overflow: hidden; height: 4px; flex-shrink: 0; }
 .quota-track span { height: 100%; display: block; border-radius: inherit; background: var(--progress-fill); }
 .quota-current { height: 5px; border-radius: 2.5px; background: var(--progress-track-current); }
-.current-account { background: var(--current-card-bg); border: 1px solid var(--current-card-stroke); border-radius: 11px; padding: 15px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
-.current-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11px; font-weight: 600; color: var(--tag-text); }
+.current-account { background: var(--current-card-bg); box-shadow: 0 0 0 .5px var(--current-card-stroke), inset 0 0 0 .5px var(--current-card-stroke); border-radius: 11px; padding: 16px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.current-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11px; line-height: 14px; font-weight: 600; color: var(--tag-text); }
+.account-info .account-identity { margin-right: 8px; }
 .account-info { display: flex; align-items: center; gap: 8px; }
 .account-identity { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.account-identity strong { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.account-identity > span { font-size: 10px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.current-account .account-identity strong { font-size: 14px; color: var(--title-text); }
-.current-account .account-identity > span { font-size: 11px; color: var(--setting-value); }
-.current-check { color: var(--check-icon); }
+.account-identity strong { font-size: 12px; line-height: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-identity > span { font-size: 10px; line-height: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.current-account .account-identity strong { font-size: 14px; line-height: 17px; color: var(--title-text); }
+.current-account .account-identity > span { font-size: 11px; line-height: 14px; color: var(--setting-value); }
+.current-check { width: 19px; height: 18px; color: var(--check-icon); }
 .current-check circle { fill: currentColor; }
 .current-check path { stroke: var(--switch-btn-text); }
 .current-quota { display: flex; flex-direction: column; gap: 8px; }
-.quota-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-secondary); }
+.quota-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; line-height: 14px; color: var(--text-secondary); }
 .quota-labels strong, .other-quota strong { font-weight: 600; color: var(--accent); }
 .other-account { padding: 10px 2px 13px; display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.other-top .account-identity { margin-right: 10px; }
 .other-top { display: flex; align-items: center; gap: 10px; }
 .account-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.other-quota { display: flex; gap: 6px; align-items: center; font-size: 10px; color: var(--text-secondary); }
+.other-quota { display: flex; gap: 6px; align-items: center; font-size: 10px; line-height: 13px; color: var(--text-secondary); }
 .other-quota .quota-track { margin-left: auto; }
 .status-slot { height: 47px; padding: 0 18px 12px; }
 .status-banner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--banner-fill); color: var(--banner-ink); }
-.status-banner strong { font-size: 12px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.status-banner > span { color: var(--banner-muted); font-size: 11px; flex-shrink: 0; }
+.status-banner strong { font-size: 12px; line-height: 15px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-banner > span { color: var(--banner-muted); font-size: 11px; line-height: 14px; flex-shrink: 0; }
 .status-warning .status-banner { background: var(--warn-fill); color: var(--warn-ink); }
 .status-warning svg { color: var(--warn-tint); }
 .update-slot { height: 72px; padding: 0 18px 12px; }
 .update-banner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; background: var(--banner-fill); color: var(--banner-ink); min-height: 60px; }
 .update-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
-.update-copy strong { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.update-copy > span { font-size: 11px; color: var(--banner-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.update-copy strong { font-size: 12px; line-height: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.update-copy > span { font-size: 11px; line-height: 14px; color: var(--banner-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .update-copy .quota-track { max-width: 100%; }
 .update-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .update-actions .link-button { color: var(--banner-muted); }
@@ -76,3 +82,15 @@
 
 /* Download actions already use their explicit muted Theme colors. */
 .update-actions button:disabled { opacity: 1; }
+
+/* AppKit dims NSButton content while its surrounding rounded box stays opaque. */
+.panel .pill-button:disabled, .panel .outline-button:disabled, .panel .quiet-button:disabled { opacity: 1; }
+.pill-primary:disabled { color: color-mix(in srgb, var(--switch-btn-text) 75%, var(--switch-btn-bg)); }
+.panel .outline-button:disabled, .panel .quiet-button:disabled { color: color-mix(in srgb, var(--add-btn-text) 75%, var(--card-white)); }
+.pill-remove:disabled { color: color-mix(in srgb, var(--remove-btn-text) 75%, var(--remove-btn-bg)); }
+.manage-row.is-current .pill-remove:disabled { color: color-mix(in srgb, var(--remove-btn-icon) 75%, var(--remove-btn-bg)); }
+
+/* NSTextField rounds the baseline of small labels to a half-point above CSS. */
+.brand-heading p, .nav-heading p, .other-account .account-identity > span,
+.other-quota > span, .other-quota > strong { position: relative; top: -.5px; }
+.auth-badge { padding-top: 2.5px; padding-bottom: 3.5px; }

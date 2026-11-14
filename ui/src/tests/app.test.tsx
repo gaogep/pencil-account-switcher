@@ -6,11 +6,12 @@ import { App } from '../App';
 const ipc = vi.hoisted(() => ({ invoke: vi.fn(), stops: [] as ReturnType<typeof vi.fn>[], events: new Map<string, (payload: any) => void>() }));
 vi.mock('../ipc', () => ({ mockMode: false, invoke: ipc.invoke, listen: async (name: string, handler: (payload: any) => void) => { ipc.events.set(name, handler); const stop = vi.fn(); ipc.stops.push(stop); return stop; } }));
 const state = () => structuredClone(fixture.state) as ViewState;
-let measure: () => void;
+let measurements: Map<Element, () => void>;
 beforeEach(() => {
+  measurements = new Map();
   ipc.invoke.mockReset(); ipc.events.clear(); ipc.stops.length = 0;
   ipc.invoke.mockImplementation(async request => request.command === 'get_state' ? state() : undefined);
-  vi.stubGlobal('ResizeObserver', class { constructor(callback: () => void) { measure = callback; } observe() {} disconnect() {} });
+  vi.stubGlobal('ResizeObserver', class { constructor(private callback: () => void) {} observe(node: Element) { measurements.set(node, this.callback); } disconnect() {} });
 });
 describe('application IPC and routing', () => {
   it('opens confirmation, Escape closes only confirmation, and reopening panel resets the route', async () => {
@@ -54,7 +55,7 @@ describe('application IPC and routing', () => {
   it('reports each measured height once and removes IPC subscriptions on unmount', async () => {
     const view = render(<App />); await screen.findByRole('button', { name: '设置' });
     const spy = vi.spyOn(screen.getByRole('main'), 'getBoundingClientRect').mockReturnValue({ height: 450 } as DOMRect);
-    act(() => { measure(); measure(); }); expect(ipc.invoke.mock.calls.filter(([r]) => r.command === 'set_panel_height')).toEqual([[{ command: 'set_panel_height', args: { h: 450 } }]]);
+    act(() => { const measure = measurements.get(screen.getByRole('main'))!; measure(); measure(); }); expect(ipc.invoke.mock.calls.filter(([r]) => r.command === 'set_panel_height')).toEqual([[{ command: 'set_panel_height', args: { h: 450 } }]]);
     spy.mockRestore(); view.unmount(); await waitFor(() => expect(ipc.stops.map(stop => stop.mock.calls.length)).toEqual([1, 1]));
   });
 });
