@@ -7,7 +7,7 @@
 | I-020 与测试文档检查点 | f9d2710 已提交并推送；TEST_REPORT.md 原文保留 |
 | T5.1 双端更新安装器 | 已完成；[PR #5](https://github.com/gaogep/pencil-account-switcher/pull/5)；双端 CI 和 Windows 辅助脚本回归通过 |
 | T5.2 发布流水线 | 已完成；[PR #6](https://github.com/gaogep/pencil-account-switcher/pull/6)；双端签名包、完整资产与草稿发布成功 |
-| T5.3 升级演练 | 工具已实现；[PR #7](https://github.com/gaogep/pencil-account-switcher/pull/7)；隔离的 2.0.0 → 2.0.1 演练正在执行 |
+| T5.3 升级演练 | 工具已实现；[PR #7](https://github.com/gaogep/pencil-account-switcher/pull/7)；mac 签名包实际替换本机通过；Windows 真实 NSIS 升级、重启及三个账号夹具保留已在 CI 通过；mac runner 收尾中 |
 | T6.1 文档与存档 | README 双端说明、Windows SmartScreen、发布/验收文档和 `swift-final` 存档已完成；旧代码保留至验收后清理 |
 | 人工与正式发布 | T0.5 Windows ARM 虚拟机、完整真实账号/自启迁移/多屏测试及正式公开发布尚未执行 |
 
@@ -18,6 +18,7 @@
 - [Release 43580428113](https://github.com/gaogep/pencil-account-switcher/actions/runs/43580428113)：mac arm64 app/DMG/ZIP 与 Windows x64 currentUser NSIS 构建、原公钥对应签名、完整资产复核、草稿汇总全部通过。[2.0.0 草稿](https://github.com/gaogep/pencil-account-switcher/releases/tag/untagged-3bc22be2f3bcf683cb59)仍未公开发布。
 - 候选资产已下载到 `build/release/`，本机用原公钥复核 ZIP/EXE 签名通过；mac 完整包严格 codesign、Bundle ID、LSUIElement、版本和 arm64 架构检查通过。
 - 本机完整 `npm test`、Rust/Clippy 和平台检查已通过；新增演练版本编辑回归同时覆盖 LF/CRLF。平台集成又补充 mac 目标文件不可变时的失败保留和临时文件清理检查。
+- 升级演练 43581711837 的 Windows 作业已通过真实 NSIS 覆盖安装、重启、exe 版本与 SHA256 保护检查；mac 真实签名包 2.0.0 → 2.0.1 的原子替换和完整签名检查也已在本机显式执行通过。最后一轮 mac runner 与交付分支检查仍在收尾。
 - Windows 初次演练的 CRLF 版本编辑问题已修复并补回归；草稿下载权限按 GitHub 要求修正。以修复后最后一次演练结果为准，早期失败不计作通过。
 
 ## 验收边界
