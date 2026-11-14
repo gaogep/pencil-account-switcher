@@ -1,4 +1,145 @@
-# 测试报告：跨平台重构 P0–P1 阶段（分支 `t1-7-app-model`）
+# 测试报告：跨平台重构（Round 4 复测：P2 `T2.1–T2.3` 运行态与 `I-019` 修复验收）
+
+- **测试日期**：2026-11-14
+- **被测分支 / 提交**：`t3-2-component-library` @ `724adc2` + 本地工作区未提交修复（`src-tauri/src/macos.rs`、`src-tauri/src/macos/panel.rs`、`ui/index.html`、`ui/src/components/components.css`）
+- **测试环境**：macOS（Apple Silicon `aarch64-apple-darwin`，主屏 `1512×982`、`visibleFrame={{0, 75}, {1512, 874}}`）、Rust / Cargo、Node.js v24.22.2、Python 3.12 + Playwright Chromium 1254、Swift 测试基线、LLDB + AppKit/WKWebView + `CGWindowListCopyWindowInfo`
+- **参考文档**：[DEV_PROGRESS.md](DEV_PROGRESS.md)、[TEST_PLAN.md](TEST_PLAN.md)、[DEV_PLAN.md](DEV_PLAN.md)、[DESIGN.md](DESIGN.md)、[ISSUES.md](ISSUES.md)
+
+---
+
+## Round 4 总结论
+
+- **总体结论**：**P2 macOS 壳运行态与 P3 组件库渲染验收通过（`I-014`、`I-015`、`I-016`、`I-018`、`I-019` 全部修复并实机验证通过；余 `I-017` 待补充自动化单测及受环境限制项）** ✅⚠️
+  1. **阻塞问题 `I-019` 已彻底解除**：移除 `panel.to_window()`、改用 `app.get_webview_window("panel")` 注册失焦事件后，`SwitchboardPanel` 在初始化后保持注册，`position` / `show` / `hide` / `hide_for_menu` / `show_if_hidden` / `toggle` / `resize` / `blur` 全部命中并真实生效。
+  2. **P2 macOS 运行态核心交互实测全绿（隔离 `HOME=/tmp/sb-qa-home`）**：
+     - **冷启动与进程属性（`M-01` / `M-15`）**：默认 `AUTO_OPEN=0` 启动隐藏（`ApplicationType="UIElement"`、`onScreen count=0`）；非 Demo 模式 `get_state` 返回 `{"demo":false,"count":0,"blocked":false,"version":"1.0.1"}`；`quit_app` 以退出码 `0` 正常退出。`SwitchboardPanel` 实测属性为 `level=25`、`collectionBehavior=0x101`（`CanJoinAllSpaces | FullScreenAuxiliary`）、`styleMask=0x80`（`NonactivatingPanel`）、`isFloatingPanel=1`、`hidesOnDeactivate=0`、`hasShadow=1`、`isOpaque=0`。
+     - **定位与高度夹取（`UI-PN-01` / `I-016`）**：初始挂载 `set_panel_height(68)` 夹取至最小高度 `200`（`topGap=12.0`）；`set_panel_height(900)` 在可用高 `874px` 屏幕下正确夹取至 `858px`（`frame={{1090, 83}, {410, 858}}`，上下各留 `8.0px`）。
+     - **托盘防抖、失焦宽限与右键菜单（`UI-PN-02..04` / `I-015`）**：左键托盘在 `95ms` 内二次点击不收起（350ms 防抖），`590ms` 后再点击正常收起；显示后 `>300ms` 及 `<300ms`（`50ms` 内）切前台应用均触发失焦重试并收起；`set_confirmation_open(true)` 时 `Escape` 与切应用失焦均保持 `VIS=1`，而右键托盘触发 `hide_for_menu` 立即收起（`VIS=0`）；`set_confirmation_open(false)` 后 `Escape` 正常收起。
+     - **`Reopen` 不重复重置与 Demo IPC（`I-016` / `M-17` / `M-18`）**：面板隐藏时 `Reopen` 呼出面板并派发 `panel-shown`（计数 `0 -> 1`），已可见时再次 `Reopen` 不再触发 `show`（计数保持 `1`）；Demo 模式 `WKWebView` 收到 `state`（3 个演示账号），触发 `add_account` 收到 `feedback.text = "演示模式不操作真实账号"`。
+  3. **仍待补充与环境受限边界**：
+     - **`I-017`（未闭合）**：`crates/switchboard-platform` 尚未补充 `platform-it` L2 集成测试（仍 `0 tests`），`ui/` 尚未配置 Vitest 组件单测。
+     - **环境限制（未做物理点击/多屏实测）**：测试机当前状态栏图标溢出屏幕左侧（`NSStatusBarWindow` `frame={{-2575, 949}, {34, 33}}`）且为单屏环境，故本次实测了“锚点不可见回退右上角（`x=1090, topGap=12`）”，**可见托盘图标居中对齐**与**多屏拖动（`M-12`）**仅通过代码走查核对；另本终端无 Screen Recording 权限（`screencapture -l` 报错），窗口与 UI 验证通过 `CGWindowListCopyWindowInfo`、`lldb` 断点追踪及 `WKWebView evaluateJavaScript` 完成。
+     - **按计划延后项**：`T3.3` 三页面集成、`T3.4` Playwright WebKit 走查、P4 Windows 与 P5 安装器仍按 [DEV_PROGRESS.md](DEV_PROGRESS.md) 属后续阶段。
+
+---
+
+## Round 4 执行明细
+
+| 检查项 | 命令 / 测试路径 | 结果 | 详情 |
+|---|---|---|---|
+| 静态检查 / 构建 / Core 单测 / Swift 基线 | `cargo fmt --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings`、`cargo test --workspace --locked`、`cargo build --locked -p switchboard-app`、`./Tests/run.sh` | ✅ PASS | `fmt` / `clippy` 0 警告；`switchboard-core` `26/26 passed`；Swift 基线 `172/172`（`platform`/`app`/`pen-probe` 仍 `0 tests`，见 `I-017`） |
+| 前端构建 / 生成物 / Chromium 22 场景 | `npm run build:ui`、`npm run types:ipc && npm run scenarios:ui`、Playwright Chromium 410×900 @2x | ✅ PASS | 0 差异、0 控制台/HTTP 错误；`I-018` 实心黑底白勾与禁用按钮 `opacity=1`、`brand.png` favicon 已验证 |
+| 隔离非 Demo 启动与退出（`M-01` / `UI-PN-06`） | `HOME=/tmp/sb-qa-home ./target/debug/switchboard-app`（无 `SWITCHBOARD_DEMO`） | ✅ PASS | `AUTO_OPEN=0` 保持隐藏（`ApplicationType="UIElement"`、`onScreen=0`）；`get_state` 返回 `{"demo":false,"count":0,"blocked":false,"version":"1.0.1"}`；`quit_app` 退出码 `0` |
+| `I-019` 面板注册与窗口属性（`M-15` / `M-18`） | `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1` + `lldb` / `WKWebView` | ✅ PASS | `SwitchboardPanel` `visible=1, key=1, level=25, onScreen=1, collectionBehavior=0x101, styleMask=0x80, isFloatingPanel=1, hidesOnDeactivate=0, hasShadow=1, isOpaque=0`；`add_account` 返回 `"演示模式不操作真实账号"` |
+| 定位回退与高度夹取（`UI-PN-01` / `I-016`） | `set_panel_height(68)` 与 `set_panel_height(900)`（可用高 `874px`） | ✅ PASS | `68` 夹取为 `200`（`topGap=12.0`）；`900` 夹取为 `858`（`frame={{1090, 83}, {410, 858}}`，上下留白各 `8.0`） |
+| 托盘左键切换与 350ms 防抖（`UI-PN-02`） | `NSStatusBarWindow` 合成 `LeftMouseDown`+`LeftMouseUp`（`NSTimer` 主循环追踪） | ✅ PASS | `toggle @ 5.721` -> `show @ 5.732`；`+95ms`（`5.827`）二次点击保持显示；`+590ms` 三次点击收起（`VIS=0 KEY=0`） |
+| 失焦宽限、锁保护与右键菜单（`UI-PN-03..04` / `I-015`） | 切换 `TextEdit` / `Microsoft Edge`、`set_confirmation_open(true/false)`、右键托盘 | ✅ PASS | `>300ms` 及 `<300ms`（`50ms` 内）切应用均收起；`confirmation_open=true` 时 `Escape` 与切应用保持 `VIS=1`，右键托盘执行 `hide_for_menu` 立即收起（`VIS=0`）；取消锁后 `Escape` 收起 |
+| `Reopen` 去重（`I-016` / `M-17`） | `applicationShouldHandleReopen` + 监听 `panel-shown` | ✅ PASS | 隐藏时触发打开并使 `panel-shown` 计数 `0 -> 1`；已可见时再次触发保持 `VIS=1` 且计数仍为 `1` |
+| 自动化单测缺口（`I-017`） | `crates/switchboard-platform`、`ui/` | ❌ 待补充 | L2 `platform-it`（`P-FS-01/03`, `P-AS-01`）与 L3 Vitest 单测仍未编写 |
+
+---
+
+# 历史归档：Round 3（P2 `T2.1–T2.3` + P3 `T3.1–T3.2` 工作区修复初复测）
+
+- **测试日期**：2026-11-14
+- **被测分支 / 提交**：`t3-2-component-library` @ `724adc2` + 本地工作区未提交修复（`src-tauri/src/macos.rs`、`src-tauri/src/macos/panel.rs`、`ui/index.html`、`ui/src/components/components.css`）
+- **测试环境**：macOS（Apple Silicon `aarch64-apple-darwin`）、Rust / Cargo、Node.js v24.22.2、Python 3.12 + Playwright Chromium 1254（本机未安装 Playwright WebKit 二进制）、Swift 测试基线、LLDB / CoreGraphics 窗口检查
+- **参考文档**：[DEV_PROGRESS.md](DEV_PROGRESS.md)、[TEST_PLAN.md](TEST_PLAN.md)、[DEV_PLAN.md](DEV_PLAN.md)、[DESIGN.md](DESIGN.md)、[ISSUES.md](ISSUES.md)
+
+---
+
+## Round 3 总结论
+
+- **总体结论**：**不通过（`I-014` / `I-018` 已修复，新发现阻塞缺陷 `I-019`）** ❌
+  1. **构建、静态检查、L1 / Swift 基线与资产生成全绿**：`cargo fmt --all --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings`、`cargo test --workspace --locked`（`switchboard-core` `26/26`）、Swift `./Tests/run.sh`（`16/16` + `156/156 = 172/172`）、`npm run build:ui`、`npm run types:ipc && npm run scenarios:ui`（0 差异）均通过。
+  2. **`I-018` 前端视觉微调已修复并通过复测**：Playwright Chromium（410×900 @2x）验证 `CurrentAccountCard` 勾选图标为实心 `#1C1C1F` 底 + `#FAFAFA` 白勾、`UpdateBanner` 下载中禁用按钮 `opacity = 1`、`ui/index.html` 使用 `/brand.png` favicon，全 22 场景与默认路由 **0** 控制台/HTTP 404 报错。
+  3. **`I-014` 启动 `SIGABRT` 已解除，但新发现 `I-019`（🔴 阻塞：`panel.to_window()` 注销面板句柄）**：
+     - 在隔离 `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1` 下，`./target/debug/switchboard-app` 已不再触发 `SIGABRT` 崩溃，进程以 `ActivationPolicy::Accessory`（`lsappinfo`: `ApplicationType="UIElement"`）稳定驻留，WebView 正常加载 `http://127.0.0.1:1420/` 并通过 IPC 调用 `set_panel_height(68)`。
+     - **但 `src-tauri/src/macos/panel.rs:63` 为挂载 `on_window_event` 调用了 `panel.to_window()`**：经核对 `tauri-nspanel` 2.1.0 源码（`panel.rs:360-395`）并用 `lldb` + `CGWindowListCopyWindowInfo` 实机验证，`to_window()` 会执行 `remove_webview_panel("panel")` 并通过 `object_setClass` 将其退化回普通 `NSWindow`。结果所有后续 `app.get_webview_panel("panel")` 均返回 `Err(PanelNotFound)` 并静默跳过，`panel::show`（`panel.rs:167`）与 `panel::position`（`panel.rs:148`）从未执行，`NSApp.windows` 中面板始终处于 `visible=0`、`onScreen=nil`、默认居中 frame `{{551, 430}, {410, 400}}`（未显示、未定位、未响应缩放与托盘交互）。
+  4. **仍待后续补充/解阻项**：`I-015`、`I-016` 及 P2 真机交互（`UI-PN-01..06`、`M-01/15/17/18`）仍受 `I-019` 阻塞；`I-017`（L2 `switchboard-platform` `platform-it` 与 L3 `ui/` Vitest 单测）尚未补充。
+
+---
+
+## Round 3 执行明细
+
+| 检查项 | 命令 / 对象 | 结果 | 详情 |
+|---|---|---|---|
+| 代码格式检查 | `cargo fmt --all --check` | ✅ PASS | 退出码 `0` |
+| Workspace Clippy | `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ PASS | 4 个 member 0 warning / 0 error |
+| Workspace 单元测试 | `cargo test --workspace --locked` | ✅ PASS（部分 0 用例） | `switchboard-core` `26/26 passed`；`switchboard-platform`、`switchboard-app`、`pen-probe` 仍为 `0 tests`（`I-017`） |
+| Swift 基线对照 | `./Tests/run.sh` | ✅ PASS | `UpdateLogicTests` `16/16` + `RegressionTests` `156/156`（`172/172`） |
+| 前端 TS + Vite 构建 | `npm run build:ui` | ✅ PASS | `tsc --noEmit` 与 `vite build`（176ms）成功 |
+| 生成物一致性核验 | `npm run types:ipc && npm run scenarios:ui` | ✅ PASS | `ui/src/generated/` 与 `ui/public/scenarios/` 与仓库 0 差异 |
+| 前端 22 场景 + `I-018` 复测 | Playwright Chromium（410×900 @2x） | ✅ PASS | 全 22 场景 + 默认页 + `I-018`（`.current-check` `circleFill=rgb(28, 28, 31)` / `pathStroke=rgb(250, 250, 250)`；下载禁用按钮 `opacity=1`；`/brand.png` favicon），**0** 控制台/HTTP 错误 |
+| 实机壳启动与 IPC 连通 | `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1 ./target/debug/switchboard-app` | ⚠️ 部分通过（`I-014` ✅ / `I-019` ❌） | 进程无崩溃、`ApplicationType="UIElement"`、WebView 加载 `127.0.0.1:1420` 并触发 `panel::resize(68 -> 200)`；但因 `panel.to_window()` 注销面板（`I-019`），`position`/`show` 均未命中，`visible=0`、`onScreen=nil`、frame 停留 `{{551, 430}, {410, 400}}` |
+| P2 面板定位/失焦/托盘/热键 | `UI-PN-01..06`、`M-01/15/17/18`、`I-015`、`I-016` | ❌ 阻塞（`I-019`） | 面板无法显示且无法通过 `get_webview_panel` 控制，待修复 `I-019` 后继续实机复测 |
+
+---
+
+# 历史归档：Round 2（P2 `T2.1–T2.3` + P3 `T3.1–T3.2` 初测）
+
+- **测试日期**：2026-11-13
+- **被测分支 / 提交**：`t3-2-component-library` @ `724adc2`（基于 `origin/main` @ `78c02d2`，顺序包含 `4ebb443` T2.1、`142dbaf` T2.2、`678ceb7` T2.3、`f0c7fc3` T3.1、`724adc2` T3.2）
+- **测试环境**：macOS（Apple Silicon `aarch64-apple-darwin`）、Rust / Cargo、Node.js v24.22.2、Python 3.12 + Playwright Chromium 1254（本机未安装 Playwright WebKit 二进制）、Swift 测试基线
+- **参考文档**：[DEV_PROGRESS.md](DEV_PROGRESS.md)、[TEST_PLAN.md](TEST_PLAN.md)、[DEV_PLAN.md](DEV_PLAN.md)、[DESIGN.md](DESIGN.md)、[ISSUES.md](ISSUES.md)
+
+---
+
+## Round 2 总结论（`T2.1`–`T3.2`）
+
+- **总体结论**：**不通过（阻塞于 `I-014`）** ❌
+  1. **构建、静态检查、L1 与资产导出全部通过**：`cargo fmt --check`、`cargo clippy --workspace --all-targets --locked -- -D warnings`、`cargo test --workspace --locked`（`switchboard-core` 26/26 / 202 条断言）、Swift 基线 `./Tests/run.sh`（172/172）、`npm run build:ui`（TS 严格检查 + Vite 打包）、`npm run types:ipc` 与 `npm run scenarios:ui`（0 差异可重现）均全绿。
+  2. **P2 macOS 应用壳（`T2.2`）启动即崩溃（`I-014` 🔴 阻塞）**：实机在隔离 `HOME=/tmp/sb-qa-home` + `SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1` 启动 `./target/debug/switchboard-app` 立即以 `SIGABRT`（退出码 `134`）崩溃，原因为 `src-tauri/src/macos/panel.rs` 未在 `with_window` 设置 `.decorations(false)` 即替换 `style_mask`，触发 AppKit `NSInternalInconsistencyException`（`WKWindowVisibilityObserver` / `contentLayoutRect`）。受此阻塞，**`T2.1`/`T2.2`/`T2.3` 的全部真机运行态验收（托盘、`NSPanel`、`UI-PN-01..06`、`M-01/15/17/18`、IPC 权限/事件、独立登录窗口、`SMAppService`）均无法开展**；另静态走查发现失焦/右键菜单/重开/高度夹取问题（`I-015`、`I-016`）。
+  3. **P3 前端骨架与组件库（`T3.1`–`T3.2`）静态与浏览器布局走查基本通过，余缺单测与视觉微调**：通过 Chromium（410×900 @2x）实渲 `/?mock=<scenario>&gallery` 全 22 个场景，主题变量、`operationLocks`、22 场景 JSON、图标/尺寸/溢出、`prefers-reduced-motion` 与 `stableHash` 均与 Swift 高度一致；存在空心勾选图标、下载禁用按钮淡化与 dev `/favicon.ico` 404（`I-018`），以及缺少 L2 `platform-it` / L3 Vitest 用例（`I-017`）。
+  4. **预期边界（不计为本轮缺陷）**：`T3.3` 三页面路由/确认弹窗与 `P5` 原生更新安装器（`update_repo = ""`）按 [DEV_PROGRESS.md](DEV_PROGRESS.md) 约定暂未接入；`P4` Windows 实现尚未开始。
+
+---
+
+## Round 2 执行明细
+
+### R2.1 构建、Lint、Core 与生成物校验
+
+| 检查项 | 命令 | 结果 | 详情 |
+|---|---|---|---|
+| 代码格式检查 | `cargo fmt --all --check` | ✅ PASS | 退出码 `0` |
+| Workspace Clippy | `cargo clippy --workspace --all-targets --locked -- -D warnings` | ✅ PASS | 4 个 member（含 `switchboard-platform`、`switchboard-app`）0 warning / 0 error |
+| Workspace 单元测试 | `cargo test --workspace --locked` | ✅ PASS（部分 0 用例） | `switchboard-core` `26/26 passed`；`switchboard-platform` **0 tests**、`switchboard-app` **0 tests**、`pen-probe` **0 tests** |
+| Swift 基线对照 | `./Tests/run.sh` | ✅ PASS | `UpdateLogicTests` `16/16` + `RegressionTests` `156/156` |
+| 前端 TS + Vite 构建 | `npm run build:ui` | ✅ PASS | `tsc --noEmit`（strict）与 `vite build` 成功（161ms） |
+| 生成物一致性核验 | `npm run types:ipc && npm run scenarios:ui && git status --short` | ✅ PASS | `ui/src/generated/*.ts`（9 个文件）与 `ui/public/scenarios/*.json`（22 个文件）均与仓库 **0 差异** |
+| macOS 壳二进制编译 | `cargo build --locked -p switchboard-app` | ✅ PASS | 产物 `./target/debug/switchboard-app` 编译成功 |
+
+### R2.2 P2 macOS 平台层与 Tauri 壳（`T2.1`–`T2.3`）
+
+| 检查项 | 覆盖范围 | 结果 | 详情 |
+|---|---|---|---|
+| 隔离环境真机冒烟启动 | `HOME=/tmp/sb-qa-home SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1 ./target/debug/switchboard-app` | ❌ FAIL（`I-014`） | 进程启动即 panic 并 `SIGABRT`（退出码 `134`）：`AppKit rejected the panel style mask: Cannot remove an observer <WKWindowVisibilityObserver> for the key path "contentLayoutRect" from <SwitchboardPanel> because it is not registered as an observer` |
+| 托盘/面板交互与 `UI-PN-01..06` / `M-01,15,17,18` | `src-tauri/src/macos.rs`、`panel.rs` | ❌ 阻塞 / 待修复（`I-014`–`I-016`） | 因启动崩溃无法实测；静态对照 `AppMain.swift` 发现失焦 0.3s 宽限无重试、右键托盘菜单不收起面板、悬停鼠标 Cmd+Tab 不收起（`I-015`），以及 `Reopen` 无条件重置路由、小屏未限制最大高度（`I-016`） |
+| IPC 契约与权限 | `core/src/ipc.rs`、`src-tauri/src/macos/ipc.rs`、`capabilities/panel.json`、`ui/src/ipc.ts` | ⚠️ 代码对齐，待运行态验证 | DESIGN §5.9 全部 16 个命令 + `set_confirmation_open` 名称、参数与 `ts-rs` 类型一一对齐；`panel.json` 含 `core:event:allow-listen`/`unlisten`，待 `I-014` 修复后在真机 WebView 验证实际 `invoke`/`listen` 连通 |
+| 平台层 `MacPlatform` & `MacAuthWindow` | `crates/switchboard-platform/src/macos.rs`, `macos/auth.rs` | ⚠️ 静态对齐，缺 L2 用例（`I-017`） | 数据目录、bundle id（`dev.pencil.desktop` / `dev.switchboard.Switchboard`）、`SMAppService`、`ASWebAuthenticationSession(prefersEphemeralWebBrowserSession=true)`、`0700`/`0600` 与设计一致；但无 `platform-it` 测试（`P-FS-01`、`P-FS-03`、`P-AS-01`）且依赖修复 `I-014` 后实机测 |
+
+### R2.3 P3 前端骨架与组件库（`T3.1`–`T3.2`）
+
+| 检查项 | 覆盖范围 | 结果 | 详情 |
+|---|---|---|---|
+| 主题 CSS 与资源 | `ui/src/theme.css`、`ui/public/brand.png`、`src-tauri/icons/tray.png` | ✅ PASS | 46 项色值/字号/字体栈与 `AppKitCommon.swift` `Theme` 及 `DESIGN §5.7` 逐一一致；`brand.png`（128×128）与 `tray.png`（36×36 单色模板）视觉清晰 |
+| 全 22 场景浏览渲染（Chromium 410×900 @2x） | `http://127.0.0.1:1420/?mock=<name>&gallery` 与默认 `/?mock=main` | ✅ PASS（含微调建议 `I-018`） | 22 个场景均加载无 JS 异常；`.panel` 宽 410px、无横向溢出（`scrollWidth <= 410`）；`StatusBanner`（47/35px）与 `UpdateBanner`（72/60px）高度贴合无裁切 |
+| 操作锁规则表 | `operationLocks`（`main` / `refreshing` / `switching` / `adding` / `downloading` / `ready` / `persistenceBlocked`） | ✅ PASS | 浏览器 DOM 验证与 `PanelController.syncOperationLock` 完全一致；`adding` 时「取消网页登录」仅在刷新/切换中禁用 |
+| 可访问性与动效 | `InkSwitch`、`RefreshButton`、`AuthBadge`、`LinkButton` | ✅ PASS | `role="switch"` + `aria-checked` 正确；`prefers-reduced-motion: reduce` 下旋转图标 `animationName === "none"`；`LinkButton` 色值 `#27272A`（`rgb(39, 39, 42)`）已对齐 `I-001` 确认方案 |
+| 头像哈希配色 | `stableHash`（`alex.chen@gmail.com` 等） | ✅ PASS | 32-bit 位运算与 Swift `(hash &* 33 &+ byte) & 0x7FFFFFFF` 一致，实渲调色板对齐 |
+| 组件自动化单测（L3） | [TEST_PLAN.md §5.1](TEST_PLAN.md#L184-L199) | ❌ 缺失（`I-017`） | `ui/` 尚未配置 Vitest 及组件单元测试用例 |
+
+---
+
+## Round 2 整改与下一步门禁建议
+
+1. **立即修复 `I-014`（阻塞）**：在 [panel.rs](file:///Users/apple/Documents/pen_switch_account/src-tauri/src/macos/panel.rs#L48-L55) 的 `with_window` 中显式设置 `.decorations(false)`（并使用 `StyleMask::empty().nonactivating_panel()`），然后重新验证 `./target/debug/switchboard-app` 在 `SWITCHBOARD_DEMO=1 SWITCHBOARD_AUTO_OPEN=1` 下可正常启动、显示托盘与 `NSPanel`。
+2. **修复 `I-015` / 确认 `I-016`**：改用全局/本地事件监听或修正 `blur()` 宽限期与右键菜单收起逻辑，并在修复 `I-014` 后完成 P2 面板实机验证（`UI-PN-01..06`、`M-01/15/17/18`）。
+3. **补齐测试与视觉微调（`I-017`、`I-018`）**：补充 `switchboard-platform` L2 测试与 `ui/` Vitest 组件单测；确认 `CurrentAccountCard` 勾选图标实心填充及 `UpdateBanner` 禁用态对比度后进入 `T3.3` / `T3.4`（Playwright WebKit）。
+
+---
+
+# 历史归档：P0–P1 阶段测试报告（分支 `t1-7-app-model`）
 
 - **测试日期**：2026-11-13
 - **被测分支 / 提交**：`t1-7-app-model` @ `194577e`（包含 `T0.2–T0.4`、`T1.1–T1.7`；对照基线：`main` @ `0f2ab7d` / `874dc34`）

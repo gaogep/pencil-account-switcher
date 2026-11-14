@@ -71,23 +71,28 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
-            "open" => panel::show(app),
+            "open" => panel::show_if_hidden(app),
             "exit" => quit(app),
             _ => (),
         })
-        .on_tray_icon_event(|tray, event| {
-            if matches!(
-                event,
-                TrayIconEvent::Click {
-                    button: MouseButton::Left,
-                    button_state: MouseButtonState::Up,
-                    ..
-                }
-            ) {
-                panel::toggle(tray.app_handle());
+        .on_tray_icon_event(|tray, event| match event {
+            TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } => panel::toggle(tray.app_handle()),
+            TrayIconEvent::Click {
+                button: MouseButton::Right,
+                button_state: MouseButtonState::Down,
+                ..
+            } => {
+                panel::hide_for_menu(tray.app_handle());
+                let _ = tray.with_inner_tray_icon(|inner| inner.show_menu());
             }
+            _ => (),
         })
-        .build(app)?;
+        .build(app)?
+        .with_inner_tray_icon(|inner| inner.set_show_menu_on_right_click(false))?;
     panel::setup(app.handle())?;
     ipc::publish(app.handle());
     if std::env::var("SWITCHBOARD_AUTO_OPEN").as_deref() == Ok("1") {
@@ -121,7 +126,7 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("initialize Switchboard");
     app.run(|app, event| match event {
-        tauri::RunEvent::Reopen { .. } => panel::show(app),
+        tauri::RunEvent::Reopen { .. } => panel::show_if_hidden(app),
         tauri::RunEvent::ExitRequested { api, .. }
             if !app.state::<ExitState>().0.load(Ordering::SeqCst) =>
         {

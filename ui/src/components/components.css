@@ -43,6 +43,8 @@
 .current-account .account-identity strong { font-size: 14px; color: var(--title-text); }
 .current-account .account-identity > span { font-size: 11px; color: var(--setting-value); }
 .current-check { color: var(--check-icon); }
+.current-check circle { fill: currentColor; }
+.current-check path { stroke: var(--switch-btn-text); }
 .current-quota { display: flex; flex-direction: column; gap: 8px; }
 .quota-labels { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-secondary); }
 .quota-labels strong, .other-quota strong { font-weight: 600; color: var(--accent); }
@@ -71,3 +73,6 @@
 @media (prefers-reduced-motion: reduce) { .spinning { animation: none; } }
 .component-gallery { padding: 2px 18px 14px; display: flex; flex-direction: column; gap: 16px; }
 .gallery-row { display: flex; gap: 8px; align-items: center; }
+
+/* Download actions already use their explicit muted Theme colors. */
+.update-actions button:disabled { opacity: 1; }

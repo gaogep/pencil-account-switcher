@@ -37,7 +37,7 @@ pub fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     PanelBuilder::<_, SwitchboardPanel>::new(app, "panel")
         .url(tauri::WebviewUrl::App("index.html".into()))
         .level(PanelLevel::Status)
-        .style_mask(StyleMask::new().borderless().nonactivating_panel())
+        .style_mask(StyleMask::empty().nonactivating_panel())
         .collection_behavior(
             CollectionBehavior::new()
                 .can_join_all_spaces()
@@ -48,6 +48,7 @@ pub fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         .with_window(|window| {
             window
                 .visible(false)
+                .decorations(false)
                 .resizable(false)
                 .skip_taskbar(true)
                 .min_inner_size(410.0, 200.0)
@@ -59,20 +60,28 @@ pub fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| std::io::Error::other(format!("{e:?}")))?;
     panel.set_has_shadow(true);
     panel.set_opaque(false);
-    if let Some(window) = panel.to_window() {
-        let app = app.clone();
-        window.on_window_event(move |event| {
-            if matches!(event, tauri::WindowEvent::Focused(false)) {
-                // Defer until the tray action (if any) has been delivered.
+    // `to_window()` converts the NSPanel back into an NSWindow and unregisters
+    // it. Query Tauri's existing handle instead, keeping both registries and
+    // the original native delegate intact.
+    let window = app
+        .get_webview_window("panel")
+        .ok_or_else(|| std::io::Error::other("panel webview window is missing"))?;
+    let app = app.clone();
+    window.on_window_event(move |event| {
+        if matches!(event, tauri::WindowEvent::Focused(false)) {
+            // Defer until the tray action (if any) has been delivered.
+            let shown = app.state::<PanelState>().inner.lock().unwrap().shown;
+            if let Some(shown) = shown {
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    tokio::time::sleep(Duration::from_millis(40)).await;
+                    let remaining = Duration::from_millis(300).saturating_sub(shown.elapsed());
+                    tokio::time::sleep(remaining.max(Duration::from_millis(40))).await;
                     let next = app.clone();
-                    let _ = app.run_on_main_thread(move || blur(&next));
+                    let _ = app.run_on_main_thread(move || blur(&next, shown));
                 });
             }
-        });
-    }
+        }
+    });
     Ok(())
 }
 fn keep_open(app: &AppHandle) -> bool {
@@ -110,7 +119,13 @@ fn position(app: &AppHandle) {
     else {
         return;
     };
-    let height = app.state::<PanelState>().inner.lock().unwrap().height;
+    let height = app
+        .state::<PanelState>()
+        .inner
+        .lock()
+        .unwrap()
+        .height
+        .min((screen.size.height - 16.0).max(1.0));
     let visible_anchor = anchor.filter(|rect| {
         NSScreen::screens(mtm)
             .iter()
@@ -130,7 +145,9 @@ fn position(app: &AppHandle) {
     let x = x
         .max(screen.origin.x + 8.0)
         .min((screen.origin.x + screen.size.width - 418.0).max(screen.origin.x + 8.0));
-    let y = y.max(screen.origin.y + 8.0);
+    let y = y
+        .max(screen.origin.y + 8.0)
+        .min(screen.origin.y + screen.size.height - height - 8.0);
     if let Ok(panel) = app.get_webview_panel("panel") {
         panel.as_panel().setFrame_display(
             NSRect::new(NSPoint::new(x, y), NSSize::new(410.0, height)),
@@ -143,12 +160,6 @@ fn intersects(a: NSRect, b: NSRect) -> bool {
         && b.origin.x < a.origin.x + a.size.width
         && a.origin.y < b.origin.y + b.size.height
         && b.origin.y < a.origin.y + a.size.height
-}
-fn contains(rect: NSRect, point: NSPoint) -> bool {
-    point.x >= rect.origin.x
-        && point.x <= rect.origin.x + rect.size.width
-        && point.y >= rect.origin.y
-        && point.y <= rect.origin.y + rect.size.height
 }
 pub fn show(app: &AppHandle) {
     position(app);
@@ -165,8 +176,20 @@ pub fn hide(app: &AppHandle) {
     if keep_open(app) {
         return;
     }
+    hide_for_menu(app);
+}
+/// An explicit tray menu action can dismiss the panel even during an operation.
+pub fn hide_for_menu(app: &AppHandle) {
+    app.state::<PanelState>().inner.lock().unwrap().shown = None;
     if let Ok(panel) = app.get_webview_panel("panel") {
         panel.hide();
+    }
+}
+pub fn show_if_hidden(app: &AppHandle) {
+    if let Ok(panel) = app.get_webview_panel("panel") {
+        if !panel.is_visible() {
+            show(app);
+        }
     }
 }
 pub fn toggle(app: &AppHandle) {
@@ -180,6 +203,7 @@ pub fn toggle(app: &AppHandle) {
                 .shown
                 .is_some_and(|t| t.elapsed() < Duration::from_millis(350))
             {
+                panel.show_and_make_key();
                 return;
             }
             hide(app);
@@ -188,26 +212,14 @@ pub fn toggle(app: &AppHandle) {
         }
     }
 }
-fn blur(app: &AppHandle) {
-    if app
-        .state::<PanelState>()
-        .inner
-        .lock()
-        .unwrap()
-        .shown
-        .is_some_and(|t| t.elapsed() < Duration::from_millis(300))
-    {
-        return;
-    }
-    let point = NSEvent::mouseLocation();
-    if anchor(app)
-        .and_then(|(anchor, _)| anchor)
-        .is_some_and(|rect| contains(rect, point))
-    {
+fn blur(app: &AppHandle, shown: Instant) {
+    // Ignore callbacks from a previous show/hide cycle. Pointer location is
+    // irrelevant for non-click focus changes such as Cmd+Tab.
+    if app.state::<PanelState>().inner.lock().unwrap().shown != Some(shown) {
         return;
     }
     if let Ok(panel) = app.get_webview_panel("panel") {
-        if panel.as_panel().isKeyWindow() || contains(panel.as_panel().frame(), point) {
+        if !panel.is_visible() || panel.as_panel().isKeyWindow() {
             return;
         }
     }
