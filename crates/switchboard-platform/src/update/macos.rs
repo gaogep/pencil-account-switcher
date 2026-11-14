@@ -170,6 +170,70 @@ mod tests {
         fs::create_dir_all(&path).unwrap();
         assert_eq!(assert_replaceable(&path).unwrap_err(), LOCATION_ERROR);
     }
+    #[tokio::test]
+    #[ignore = "requires two signed release archives; run with upgrade-rehearsal.yml"]
+    async fn signed_release_replacement() {
+        let previous = PathBuf::from(
+            std::env::var_os("SWITCHBOARD_PREVIOUS_ARCHIVE").expect("previous signed archive"),
+        );
+        let next = PathBuf::from(
+            std::env::var_os("SWITCHBOARD_NEXT_ARCHIVE").expect("next signed archive"),
+        );
+        let previous_version = std::env::var("SWITCHBOARD_PREVIOUS_VERSION").unwrap();
+        let next_version = std::env::var("SWITCHBOARD_NEXT_VERSION").unwrap();
+        for archive in [&previous, &next] {
+            let signature = fs::read_to_string(format!("{}.sig", archive.display())).unwrap();
+            switchboard_core::update::verify_signature(&fs::read(archive).unwrap(), &signature)
+                .unwrap();
+        }
+        let root = tempfile::tempdir().unwrap();
+        let old_stage = root.path().join("old");
+        let new_stage = root.path().join("new");
+        fs::create_dir_all(&old_stage).unwrap();
+        fs::create_dir_all(&new_stage).unwrap();
+        let old_app = prepare(&previous, &old_stage, &previous_version)
+            .await
+            .unwrap();
+        let new_app = prepare(&next, &new_stage, &next_version).await.unwrap();
+        let current = root.path().join("Installed app.app");
+        fs::rename(old_app, &current).unwrap();
+        let data = root.path().join("user data");
+        fs::create_dir_all(data.join("credentials")).unwrap();
+        let protected = [
+            ("store.json", include_bytes!("../../../switchboard-core/tests/fixtures/v1.0.1/store.json").as_slice()),
+            ("credentials/11111111-1111-4111-8111-111111111111.json", include_bytes!("../../../switchboard-core/tests/fixtures/v1.0.1/credentials/11111111-1111-4111-8111-111111111111.json").as_slice()),
+        ];
+        for (name, bytes) in protected {
+            fs::write(data.join(name), bytes).unwrap();
+        }
+        replace(&current, &new_app).unwrap();
+        verify_bundle(&current, &next_version).unwrap();
+        assert!(Command::new("/usr/bin/codesign")
+            .args(["--verify", "--deep", "--strict"])
+            .arg(&current)
+            .status()
+            .unwrap()
+            .success());
+        for (name, bytes) in protected {
+            assert_eq!(fs::read(data.join(name)).unwrap(), bytes);
+        }
+        println!("Signed macOS release replacement {previous_version} -> {next_version}: bundle and protected fixture bytes passed; UI restart and real startup registration require manual acceptance");
+    }
+    #[test]
+    fn refuses_non_writable_parent_before_replacing() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let app = bundle(
+            root.path(),
+            "Current",
+            "dev.switchboard.Switchboard",
+            "1.0.1",
+        );
+        fs::set_permissions(root.path(), fs::Permissions::from_mode(0o555)).unwrap();
+        let result = assert_replaceable(&app);
+        fs::set_permissions(root.path(), fs::Permissions::from_mode(0o755)).unwrap();
+        assert_eq!(result.unwrap_err(), LOCATION_ERROR);
+    }
     #[test]
     fn replacement_uses_new_bundle_and_retains_user_data() {
         let root = tempfile::tempdir().unwrap();
