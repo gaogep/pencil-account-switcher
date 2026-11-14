@@ -11,8 +11,10 @@ for (const [path, before, after] of [
   ['Cargo.lock', `name = "switchboard-app"\nversion = "${current}"`, `name = "switchboard-app"\nversion = "${next}"`],
 ]) {
   const text = readFileSync(path, 'utf8');
-  if (!text.includes(before)) throw new Error(`Unexpected application version in ${path}`);
-  writeFileSync(path, text.replace(before, after));
+  const newline = text.includes('\r\n') ? '\r\n' : '\n';
+  const search = before.replaceAll('\n', newline);
+  if (!text.includes(search)) throw new Error(`Unexpected application version in ${path}`);
+  writeFileSync(path, text.replace(search, after.replaceAll('\n', newline)));
 }
 config.version = next;
 writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
