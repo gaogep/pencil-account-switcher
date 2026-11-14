@@ -45,6 +45,14 @@ jobs:
       - name: Set disposable candidate version
         shell: pwsh
         run: node scripts/set_rehearsal_version.mjs "$env:NEXT_VERSION"
+      - name: Build next candidate
+        run: npm run tauri -- build --ci --target ${{ matrix.target }} -- --locked
+      - run: node scripts/release_assets.mjs package ${{ matrix.target }}
+      - name: Sign next package
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        shell: pwsh
+        run: node scripts/sign_update.mjs "build/release/Pencil-Account-Switcher-$($env:NEXT_VERSION)-${{ matrix.suffix }}"
       - name: Download previous signed candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -54,14 +62,6 @@ jobs:
           $Name = "Pencil-Account-Switcher-$($env:PREVIOUS_VERSION)-${{ matrix.suffix }}"
           New-Item -ItemType Directory -Force build/rehearsal/previous | Out-Null
           gh release download "v$env:PREVIOUS_VERSION" --pattern "$Name*" --dir build/rehearsal/previous
-      - name: Build next candidate
-        run: npm run tauri -- build --ci --target ${{ matrix.target }} -- --locked
-      - run: node scripts/release_assets.mjs package ${{ matrix.target }}
-      - name: Sign next package
-        env:
-          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
-        shell: pwsh
-        run: node scripts/sign_update.mjs "build/release/Pencil-Account-Switcher-$($env:NEXT_VERSION)-${{ matrix.suffix }}"
       - name: macOS signed archive replacement
         if: runner.os == 'macOS'
         env:
