@@ -3609,8 +3609,11 @@ dependencies = [
  "objc2-authentication-services",
  "objc2-foundation",
  "objc2-service-management",
+ "serde_json",
  "switchboard-core",
  "tokio",
+ "windows-sys 0.59.0",
+ "winreg",
 ]
 
 [[package]]
