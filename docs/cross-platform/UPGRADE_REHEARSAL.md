@@ -39,3 +39,5 @@ gh workflow run upgrade-rehearsal.yml --ref t5-3-upgrade-rehearsal \
 | UP-05 篡改签名 | core 和 Node 回归均拒绝篡改，安装准备之前终止 | 两端 UI 的提示与保留旧应用/数据 |
 
 使用专门测试账号和备份。T0.5 Windows 11 ARM 虚拟机与 TEST_PLAN 的多屏、高 DPI、真实登录、切号等人工项目仍需有可用设备后执行。原 Swift 源码、旧测试和 mac 视觉基线保留至验收完成；正式 `v2.0.0` 发布和删旧代码应在这些记录具备后进行。
+
+草稿下载作业使用 `contents: write`，仅用于获得草稿可见权限，不调用发布接口。GitHub 仅向有推送权限的调用者列出草稿，见 [Releases API](https://docs.github.com/en/rest/releases/releases#list-releases)。

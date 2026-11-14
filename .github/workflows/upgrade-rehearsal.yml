@@ -18,6 +18,9 @@ permissions:
   contents: read
 jobs:
   rehearse:
+    # GitHub requires push access to see draft releases; this job never publishes.
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
