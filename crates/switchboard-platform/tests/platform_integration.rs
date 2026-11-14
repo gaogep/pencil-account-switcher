@@ -50,6 +50,31 @@ fn check(platform: &impl Platform) {
             0o700
         );
     }
+    #[cfg(target_os = "macos")]
+    {
+        // A locked destination fails after the temporary file has been written.
+        // Only this temporary fixture is made immutable, and Drop restores it.
+        struct Immutable(PathBuf);
+        impl Drop for Immutable {
+            fn drop(&mut self) {
+                let _ = std::process::Command::new("/usr/bin/chflags")
+                    .arg("nouchg")
+                    .arg(&self.0)
+                    .status();
+            }
+        }
+        let guard = Immutable(file.clone());
+        assert!(std::process::Command::new("/usr/bin/chflags")
+            .arg("uchg")
+            .arg(&file)
+            .status()
+            .unwrap()
+            .success());
+        assert!(atomic_write(&file, b"must not replace immutable file", true).is_err());
+        assert_eq!(fs::read(&file).unwrap(), b"new fixture");
+        assert_eq!(fs::read_dir(file.parent().unwrap()).unwrap().count(), 1);
+        drop(guard);
+    }
     #[cfg(windows)]
     {
         use std::{
