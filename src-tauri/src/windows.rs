@@ -1,3 +1,4 @@
+mod auth;
 pub(crate) mod panel;
 mod services;
 mod theme;
@@ -31,7 +32,7 @@ pub fn quit(app: &tauri::AppHandle) {
 }
 fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let platform = WindowsPlatform::default();
-    let services = services::Services::new(platform.clone());
+    let services = services::Services::new(app.handle().clone(), platform.clone());
     let home = std::path::PathBuf::from(
         std::env::var_os("USERPROFILE").ok_or("missing Windows user profile")?,
     );

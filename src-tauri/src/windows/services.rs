@@ -4,26 +4,31 @@ use switchboard_core::{
     quota::{PenQuotaProvider, QuotaResult},
     target::{TargetFuture, TargetSnapshot},
     update::PlatformAsset,
+    web_login::WebLogin,
 };
 use switchboard_platform::{windows::WindowsPlatform, Platform};
 
 pub struct Services {
     pub quota: PenQuotaProvider<WindowsPlatform>,
+    pub login: WebLogin<super::auth::WindowsAuthWindow>,
     pub platform: WindowsPlatform,
 }
 impl Services {
-    pub fn new(platform: WindowsPlatform) -> Arc<Self> {
+    pub fn new(app: tauri::AppHandle, platform: WindowsPlatform) -> Arc<Self> {
         Arc::new(Self {
             quota: PenQuotaProvider::new("https://api.pencil.dev".into(), platform.clone()),
+            login: WebLogin::new(super::auth::WindowsAuthWindow::new(app.clone())),
             platform,
         })
     }
 }
 impl AppServices for Services {
     fn login(&self) -> TargetFuture<'_, Result<TargetSnapshot, String>> {
-        Box::pin(async { Err("Windows 网页登录尚未接入".into()) })
+        Box::pin(self.login.sign_in(self.quota.device_id(), "win32"))
     }
-    fn cancel_login(&self) {}
+    fn cancel_login(&self) {
+        self.login.cancel();
+    }
     fn quota<'a>(&'a self, snapshot: &'a TargetSnapshot) -> TargetFuture<'a, QuotaResult> {
         Box::pin(self.quota.fetch_quota(snapshot))
     }
