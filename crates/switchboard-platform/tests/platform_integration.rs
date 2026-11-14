@@ -4,13 +4,24 @@ use std::{fs, path::PathBuf};
 use switchboard_core::store::{atomic_write, DataDirectory, FileCredentialStore};
 use switchboard_platform::Platform;
 
+#[cfg(windows)]
+#[path = "support/windows.rs"]
+mod windows_fixtures;
+
 fn main() {
+    #[cfg(windows)]
+    if windows_fixtures::is_fixture() {
+        windows_fixtures::fixture();
+        return;
+    }
     #[cfg(target_os = "macos")]
     let platform = switchboard_platform::macos::MacPlatform;
     #[cfg(target_os = "windows")]
     let platform = switchboard_platform::windows::WindowsPlatform::default();
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     check(&platform);
+    #[cfg(windows)]
+    windows_fixtures::run();
 }
 fn check(platform: &impl Platform) {
     assert!(platform.data_dir().ends_with("Switchboard"));
@@ -49,6 +60,31 @@ fn check(platform: &impl Platform) {
                 & 0o777,
             0o700
         );
+    }
+    #[cfg(target_os = "macos")]
+    {
+        // A locked destination fails after the temporary file has been written.
+        // Only this temporary fixture is made immutable, and Drop restores it.
+        struct Immutable(PathBuf);
+        impl Drop for Immutable {
+            fn drop(&mut self) {
+                let _ = std::process::Command::new("/usr/bin/chflags")
+                    .arg("nouchg")
+                    .arg(&self.0)
+                    .status();
+            }
+        }
+        let guard = Immutable(file.clone());
+        assert!(std::process::Command::new("/usr/bin/chflags")
+            .arg("uchg")
+            .arg(&file)
+            .status()
+            .unwrap()
+            .success());
+        assert!(atomic_write(&file, b"must not replace immutable file", true).is_err());
+        assert_eq!(fs::read(&file).unwrap(), b"new fixture");
+        assert_eq!(fs::read_dir(file.parent().unwrap()).unwrap().count(), 1);
+        drop(guard);
     }
     #[cfg(windows)]
     {

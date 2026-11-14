@@ -1,4 +1,37 @@
-# 开发交接：停止于 T4.3
+# 开发进度：2.0.0 候选
+
+当前交付分支为 `t6-1-delivery-docs`。业务功能、双端更新安装器、发布流水线和升级演练工具已实现；下表区分代码交付与实机验收，不按代码任务数推算验收通过率。
+
+| 范围 | 当前结果 |
+|---|---|
+| I-020 与测试文档检查点 | f9d2710 已提交并推送；TEST_REPORT.md 原文保留 |
+| T5.1 双端更新安装器 | 已完成；[PR #5](https://github.com/gaogep/pencil-account-switcher/pull/5)；双端 CI 和 Windows 辅助脚本回归通过 |
+| T5.2 发布流水线 | 已完成；[PR #6](https://github.com/gaogep/pencil-account-switcher/pull/6)；双端签名包、完整资产与草稿发布成功 |
+| T5.3 升级演练 | 工具已实现；[PR #7](https://github.com/gaogep/pencil-account-switcher/pull/7)；mac 签名包实际替换本机通过；Windows 真实 NSIS 升级、重启及三个账号夹具保留已在 CI 通过；mac runner 已通过，双端隔离升级演练完成 |
+| T6.1 文档与存档 | README 双端说明、Windows SmartScreen、发布/验收文档和 `swift-final` 存档已完成；旧代码保留至验收后清理 |
+| 人工与正式发布 | T0.5 Windows ARM 虚拟机、完整真实账号/自启迁移/多屏测试及正式公开发布尚未执行 |
+
+## 当前验证证据
+
+- [Test 43580088864](https://github.com/gaogep/pencil-account-switcher/actions/runs/43580088864)：双端 Rust/Clippy、platform-it、Windows 辅助脚本、前端、Swift 和双端视觉全部通过。Windows 独占锁回归验证超时保留原文件、短暂锁释放后写入成功。
+- [Test 43580415671](https://github.com/gaogep/pencil-account-switcher/actions/runs/43580415671)：发布工具与 2.0.0 配置检查通过。
+- [Release 43580428113](https://github.com/gaogep/pencil-account-switcher/actions/runs/43580428113)：mac arm64 app/DMG/ZIP 与 Windows x64 currentUser NSIS 构建、原公钥对应签名、完整资产复核、草稿汇总全部通过。[2.0.0 草稿](https://github.com/gaogep/pencil-account-switcher/releases/tag/untagged-3bc22be2f3bcf683cb59)仍未公开发布。
+- 候选资产已下载到 `build/release/`，本机用原公钥复核 ZIP/EXE 签名通过；mac 完整包严格 codesign、Bundle ID、LSUIElement、版本和 arm64 架构检查通过。
+- 本机完整 `npm test`、Rust/Clippy 和平台检查已通过；新增演练版本编辑回归同时覆盖 LF/CRLF。平台集成又补充 mac 目标文件不可变时的失败保留和临时文件清理检查。
+- 升级演练 43581711837 的 Windows 作业已通过真实 NSIS 覆盖安装、重启、exe 版本与 SHA256 保护检查；mac 真实签名包 2.0.0 → 2.0.1 的原子替换和完整签名检查也已在本机显式执行通过。[Upgrade rehearsal 43581711837](https://github.com/gaogep/pencil-account-switcher/actions/runs/43581711837) 的双端作业均已通过。
+- Windows 初次演练的 CRLF 版本编辑问题已修复并补回归；草稿下载权限按 GitHub 要求修正。以修复后最后一次演练结果为准，早期失败不计作通过。
+
+## 验收边界
+
+实现与自动化证据不代替真实用户路径。[UPGRADE_REHEARSAL.md](UPGRADE_REHEARSAL.md) 逐项列出 UP-01..05 自动化覆盖和剩余项目；[ISSUES.md](ISSUES.md) 保留 I-017 的人工核对和 Windows 进程夹具细项缺口。真实账号登录、切换、系统自启状态迁移和多显示器/DPI 仍需测试人员验收。
+
+原 Swift 源码、Support、Tests、mac 视觉基线和测试报告自 f9d2710 后未改写；已推送 `swift-final` 指向该提交。清理范围和依赖见 [SWIFT_ARCHIVE.md](SWIFT_ARCHIVE.md)。本轮没有替换当前用户安装或操作真实账号，也没有正式公开发布。
+
+---
+
+以下保留先前阶段交接记录；其中“尚待”“本轮”等状态以其所属阶段为准，当前结论以上表为准。
+
+# 先前阶段记录：T4.3
 
 本轮按用户要求继续到一个完整功能点后停止。沿用 DEV_PLAN 的 26 项任务等权口径，已有基线成果或代码的任务为 **21/26，约 81%**；这是代码任务覆盖率，**不是测试或验收通过率**。当前分支 `t4-3-windows-login` 按顺序包含 T3.3 至 T4.3 的本地提交，没有推送或创建本轮 PR。
 
@@ -69,3 +102,9 @@ T4.2 同时依据 Swift 的结构补齐主页/管理页末尾的空白排列项�
 - 新增隔离 runner 升级演练：从草稿取原公钥签名包，在 disposable checkout 构建/签名下一数字版本。mac 使用真实签名 ZIP 测试准备、替换与数据文件字节保留；Windows 使用真实 NSIS、生产等待/安装/重启辅助脚本及三个假账号夹具，生成 JSON 证据。
 - 该演练不发布下一版，不修改真实用户账号或本地版本。mac 的候选替换测试默认为 ignored，显式提供签名包后才执行；真实客户端横幅/登录/自启迁移仍按 UPGRADE_REHEARSAL.md 人工验收。
 - T5.1 的远端 Test 43580088864 已全部通过：双端 Rust/Clippy/平台集成、Windows 辅助脚本夹具、前端、Swift 和双端视觉；Pen compatibility 43580088878 通过。mac 安装器又补充不可写父目录回归，本机通过。
+
+## 完成性审计补充：Windows L2
+
+- 审计发现 P-PR-01..05 与 P-AS-03 的原生夹具仍缺，已补测试实现，等待本次 Windows CI 执行。进程测试复制自身为私有临时 `Pen.exe`，覆盖空进程、发现/正常退出、含空格便携路径重启、拒绝 WM_CLOSE 超时、两个相同标题按配置唯一选择，以及无匹配时不发送关闭。
+- 注册表测试使用进程内 `RegOverridePredefKey` 把 HKCU 映射至私有 `Software\SwitchboardCI` 子树，再调用生产自启实现，验证 Run 写/读/删及 Windows 禁用状态 3/7；恢复映射并清理测试子树，不改真实 Run/StartupApproved 值。
+- 这些可变 Windows 夹具仅在隔离的 Actions runner 执行；本机只有交叉 Clippy 检查，不将编译通过计为 Windows 执行通过。Mac 的 SMAppService 与系统设置人工一致性核对仍需实机验收。
