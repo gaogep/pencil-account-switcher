@@ -63,3 +63,9 @@ T4.2 同时依据 Swift 的结构补齐主页/管理页末尾的空白排列项�
 - 与 Swift 的同文件/同测试 seed 对比已完成：本机 CryptoKit 连续签名本身字节不稳定，新旧签名格式均为无换行的 base64 64 字节 Ed25519 签名，互相验签均通过；不以签名字节相同作为兼容性条件。
 - 应用/配置/前端版本设为 2.0.0，锁定 Tauri CLI 2.12.4。`npm test` 包含 UI 和发布工具测试。已在本机完成 arm64 `.app`、DMG 和兼容 ZIP 打包，LSUIElement/架构检查通过；显式 ad-hoc 签名后，完整包 codesign 严格校验通过，校验也已加入打包入口。
 - Windows L2 锁文件测试发现 MoveFileEx 可能返回 ACCESS_DENIED（5），已在 T5.1 补上和 SHARING_VIOLATION（32）相同的有限重试；Windows/mac 视觉 CI 均已执行通过，Windows 锁文件修复正在重跑。
+
+## P5 开发补充：T5.3
+
+- 新增隔离 runner 升级演练：从草稿取原公钥签名包，在 disposable checkout 构建/签名下一数字版本。mac 使用真实签名 ZIP 测试准备、替换与数据文件字节保留；Windows 使用真实 NSIS、生产等待/安装/重启辅助脚本及三个假账号夹具，生成 JSON 证据。
+- 该演练不发布下一版，不修改真实用户账号或本地版本。mac 的候选替换测试默认为 ignored，显式提供签名包后才执行；真实客户端横幅/登录/自启迁移仍按 UPGRADE_REHEARSAL.md 人工验收。
+- T5.1 的远端 Test 43580088864 已全部通过：双端 Rust/Clippy/平台集成、Windows 辅助脚本夹具、前端、Swift 和双端视觉；Pen compatibility 43580088878 通过。mac 安装器又补充不可写父目录回归，本机通过。

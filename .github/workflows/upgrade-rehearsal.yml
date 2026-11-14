@@ -1,0 +1,85 @@
+name: Upgrade rehearsal
+on:
+  push:
+    branches: [t5-3-upgrade-rehearsal]
+  workflow_dispatch:
+    inputs:
+      previous_version:
+        description: "Existing signed draft or test release version"
+        required: true
+        default: "2.0.0"
+        type: string
+      next_version:
+        description: "Newer candidate version built only in this disposable checkout"
+        required: true
+        default: "2.0.1"
+        type: string
+permissions:
+  contents: read
+jobs:
+  rehearse:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            suffix: arm64.zip
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            suffix: windows-x64-setup.exe
+    runs-on: ${{ matrix.os }}
+    env:
+      PREVIOUS_VERSION: ${{ inputs.previous_version || '2.0.0' }}
+      NEXT_VERSION: ${{ inputs.next_version || '2.0.1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: npm ci
+      - name: Set disposable candidate version
+        shell: pwsh
+        run: node scripts/set_rehearsal_version.mjs "$env:NEXT_VERSION"
+      - name: Download previous signed candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          if ($env:PREVIOUS_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'Expected a numeric release version' }
+          $Name = "Pencil-Account-Switcher-$($env:PREVIOUS_VERSION)-${{ matrix.suffix }}"
+          New-Item -ItemType Directory -Force build/rehearsal/previous | Out-Null
+          gh release download "v$env:PREVIOUS_VERSION" --pattern "$Name*" --dir build/rehearsal/previous
+      - name: Build next candidate
+        run: npm run tauri -- build --ci --target ${{ matrix.target }} -- --locked
+      - run: node scripts/release_assets.mjs package ${{ matrix.target }}
+      - name: Sign next package
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        shell: pwsh
+        run: node scripts/sign_update.mjs "build/release/Pencil-Account-Switcher-$($env:NEXT_VERSION)-${{ matrix.suffix }}"
+      - name: macOS signed archive replacement
+        if: runner.os == 'macOS'
+        env:
+          SWITCHBOARD_PREVIOUS_ARCHIVE: ${{ github.workspace }}/build/rehearsal/previous/Pencil-Account-Switcher-${{ inputs.previous_version || '2.0.0' }}-arm64.zip
+          SWITCHBOARD_NEXT_ARCHIVE: ${{ github.workspace }}/build/release/Pencil-Account-Switcher-${{ inputs.next_version || '2.0.1' }}-arm64.zip
+          SWITCHBOARD_PREVIOUS_VERSION: ${{ inputs.previous_version || '2.0.0' }}
+          SWITCHBOARD_NEXT_VERSION: ${{ inputs.next_version || '2.0.1' }}
+        run: cargo test -p switchboard-platform --locked update::macos::tests::signed_release_replacement -- --ignored --exact --nocapture
+      - name: Windows signed NSIS upgrade and restart
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          ./scripts/rehearse_windows_upgrade.ps1 -PreviousInstaller "$pwd/build/rehearsal/previous/Pencil-Account-Switcher-$($env:PREVIOUS_VERSION)-windows-x64-setup.exe" -NextInstaller "$pwd/build/release/Pencil-Account-Switcher-$($env:NEXT_VERSION)-windows-x64-setup.exe" -NextVersion "$env:NEXT_VERSION"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upgrade-rehearsal-${{ matrix.os }}
+          path: |
+            build/release/*
+            build/rehearsal/*report.json
+          if-no-files-found: warn
