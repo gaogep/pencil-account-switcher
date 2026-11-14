@@ -3,6 +3,7 @@
 .main-content { padding: 2px 18px 14px; gap: 16px; }
 .settings-content { padding: 2px 20px 14px; gap: 20px; }
 .manage-content { padding: 2px 20px 14px; gap: 12px; }
+.main-content::after, .manage-content::after { content: ""; flex-shrink: 0; }
 .section-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-secondary); font-size: 11px; }
 .section-caption strong { font-size: 12px; color: var(--title-text); }
 .empty-state { padding: 24px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-secondary); }
@@ -10,7 +11,7 @@
 .empty-state p { font-size: 11px; text-align: center; }
 .unregistered { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 10px; background: var(--warn-fill); border: 1px solid var(--card-stroke); color: var(--text-secondary); font-size: 11px; }
 .unregistered > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.main-footer { padding: 12px 22px 18px; color: var(--text-faint); font-size: 10px; }
+.main-footer { padding: 17px 20px 18px; color: var(--text-faint); font-size: 10px; }
 .settings-group h2 { margin: 0 0 8px; color: var(--title-text); font-size: 12px; }
 .settings-card, .manage-card { border: 1px solid var(--card-stroke); border-radius: 10px; background: var(--card-white); overflow: hidden; flex-shrink: 0; }
 .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 13px; }
@@ -32,3 +33,10 @@
 .confirm-dialog p { font-size: 11px; overflow-wrap: anywhere; color: var(--text-secondary); }
 .dialog-actions { margin-top: 16px; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .dialog-actions .pill-button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+/* Windows reserves ten logical pixels for the transparent CSS shadow. */
+.platform-windows body { padding: 10px; }
+.platform-windows .panel { box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent); }
+.platform-windows .panel > div:first-child { display: flex; flex-direction: column; max-height: var(--panel-max-height, 900px); }
+.platform-windows .panel > div:first-child > :not(.screen-content) { flex-shrink: 0; }
+.platform-windows .screen-content { min-height: 0; }
+.platform-windows .screen-content > * { flex-shrink: 0; }

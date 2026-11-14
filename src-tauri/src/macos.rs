@@ -1,5 +1,5 @@
-mod ipc;
-mod panel;
+use crate::ipc;
+pub(crate) mod panel;
 mod services;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
