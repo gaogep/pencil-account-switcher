@@ -32,7 +32,7 @@ pub fn quit(app: &tauri::AppHandle) {
 }
 fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let platform = WindowsPlatform::default();
-    let services = services::Services::new(app.handle().clone(), platform.clone());
+    let services = services::Services::new(app.handle().clone(), platform.clone())?;
     let home = std::path::PathBuf::from(
         std::env::var_os("USERPROFILE").ok_or("missing Windows user profile")?,
     );
@@ -91,6 +91,23 @@ fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .build(app)?;
     panel::setup(app.handle())?;
     ipc::publish(app.handle());
+    let error_path = switchboard_platform::update::store_update_error_path();
+    if let Ok(error) = std::fs::read_to_string(&error_path) {
+        let _ = std::fs::remove_file(error_path);
+        let message: Vec<u16> = format!("安装更新失败：{}\0", error.trim())
+            .encode_utf16()
+            .collect();
+        let title: Vec<u16> = "Pencil Account Switcher\0".encode_utf16().collect();
+        unsafe {
+            windows_sys::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                std::ptr::null_mut(),
+                message.as_ptr(),
+                title.as_ptr(),
+                windows_sys::Win32::UI::WindowsAndMessaging::MB_OK
+                    | windows_sys::Win32::UI::WindowsAndMessaging::MB_ICONWARNING,
+            );
+        }
+    }
     theme::watch(app.handle().clone());
     if std::env::var("SWITCHBOARD_AUTO_OPEN").as_deref() == Ok("1") {
         panel::show(app.handle());

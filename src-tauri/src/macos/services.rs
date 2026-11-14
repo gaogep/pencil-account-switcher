@@ -8,21 +8,30 @@ use switchboard_core::{
 };
 use switchboard_platform::{
     macos::{MacAuthWindow, MacPlatform},
+    update::NativeUpdateInstaller,
     Platform,
 };
 
 pub struct Services {
+    installer: NativeUpdateInstaller,
     pub quota: PenQuotaProvider<MacPlatform>,
     pub login: WebLogin<MacAuthWindow>,
     pub app: tauri::AppHandle,
 }
 impl Services {
-    pub fn new(app: tauri::AppHandle) -> Arc<Self> {
-        Arc::new(Self {
+    pub fn new(app: tauri::AppHandle) -> Result<Arc<Self>, std::io::Error> {
+        let executable = std::env::current_exe()?;
+        let current = executable
+            .ancestors()
+            .nth(3)
+            .unwrap_or(&executable)
+            .to_path_buf();
+        Ok(Arc::new(Self {
+            installer: NativeUpdateInstaller::new(current),
             quota: PenQuotaProvider::new("https://api.pencil.dev".into(), MacPlatform),
             login: WebLogin::new(MacAuthWindow::default()),
             app,
-        })
+        }))
     }
 }
 impl AppServices for Services {
@@ -43,22 +52,25 @@ impl AppServices for Services {
             .set_launch_at_login(enabled)
             .map_err(|e| e.to_string())
     }
-    // Automatic updating is enabled when the platform installer arrives in P5.
     fn update_repo(&self) -> &str {
-        ""
+        "gaogep/pencil-account-switcher"
     }
     fn update_platform(&self) -> PlatformAsset {
         PlatformAsset::Mac
     }
     fn prepare_update<'a>(
         &'a self,
-        _: &'a Path,
-        _: &'a str,
+        package: &'a Path,
+        version: &'a str,
     ) -> TargetFuture<'a, Result<String, String>> {
-        Box::pin(async { Err("更新安装器尚未接入".into()) })
+        Box::pin(self.installer.prepare(package, version))
     }
-    fn install_update<'a>(&'a self, _: &'a str) -> TargetFuture<'a, Result<(), String>> {
-        Box::pin(async { Err("更新安装器尚未接入".into()) })
+    fn install_update<'a>(&'a self, prepared: &'a str) -> TargetFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            self.installer.install(prepared)?;
+            super::quit(&self.app);
+            Ok(())
+        })
     }
     fn open_update_page(&self, url: &str) -> Result<(), String> {
         let url = url.to_string();

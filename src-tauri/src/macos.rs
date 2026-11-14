@@ -31,7 +31,7 @@ pub fn quit(app: &tauri::AppHandle) {
 }
 fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     app.set_activation_policy(tauri::ActivationPolicy::Accessory);
-    let services = services::Services::new(app.handle().clone());
+    let services = services::Services::new(app.handle().clone())?;
     let home = std::path::PathBuf::from(std::env::var_os("HOME").ok_or("missing user home")?);
     let model = tauri::async_runtime::block_on(async {
         app_model::start(
