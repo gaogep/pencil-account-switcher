@@ -47,3 +47,11 @@ T4.2 同时依据 Swift 的结构补齐主页/管理页末尾的空白排列项�
 - WebKit 截图使用透明背景，保留全部原基线、严格尺寸断言、原图标例外和 1% 像素阈值；新增 34/36px 头像计算尺寸/字号断言。
 - 开发侧验证：`npm test` **29/29**、`npm run build:ui` 通过；`npm run test:visual` **22/22**，其中 21 个场景完成尺寸与像素比对，确认框按既有规则核对文案和按钮顺序。
 - TEST_REPORT.md 的 Round 5 原文保持不变，修复结果记在问题单；I-017 的 L2 `platform-it` 与 Windows 真机验收仍待后续完成。本轮未启动真实账号操作，未运行原生功能验收或触发远端 CI。
+
+## P5 开发补充：T5.1
+
+- 双端 `NativeUpdateInstaller` 已接入应用：core 先用原 Ed25519 公钥验签，平台层再准备包；mac 检查唯一 .app、Bundle ID、版本、可写位置与 App Translocation，原子替换后等待当前进程退出并重启。
+- Windows 将已验签 exe 复制到独立暂存目录。辅助 PowerShell 等旧进程退出，以 `/S /UPDATE /D=<原安装目录>` 调用 currentUser NSIS，再重启；失败记录写入数据目录并在下次启动显示，暂存文件清理不涉及账号数据。成功安装通过原退出入口落盘。
+- 新增 `platform-it`（独立主线程测试入口，避免 Cocoa 调度死锁）：只读原生路径/进程/自启，凭据与文件锁测试全部在临时目录内执行；不改变真实自启或 Pen 会话。另提供 Windows 辅助脚本夹具集成测试。
+- 本机验证：mac Clippy `-D warnings`、Rust 26 个 core 测试 + 4 个安装器测试 + platform-it 通过。Windows 本机仅交叉编译检查，辅助脚本实际执行由 Windows CI 验证。
+- 前一提交 f9d2710 的 Windows/mac Rust、前端和 Swift CI 通过；mac 视觉作业因 GitHub `macos-14-arm64-us-default is not supported` 在分配前取消，已改为可用的 `macos-latest`，未将取消计作通过。
