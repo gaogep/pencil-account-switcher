@@ -12,6 +12,8 @@
     "build:ui": "npm run build --workspace ui",
     "types:ipc": "cargo run -p switchboard-core --bin export_bindings -- ui/src/generated",
     "scenarios:ui": "python3 scripts/export_scenarios.py",
-    "test:ui": "npm run test --workspace ui"
+    "test:ui": "npm run test --workspace ui",
+    "test:visual": "npm run test:visual --workspace ui --",
+    "test": "npm run test:ui"
   }
 }

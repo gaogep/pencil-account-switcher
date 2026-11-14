@@ -15,12 +15,14 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "types": [
-      "vite/client"
+      "vite/client",
+      "node"
     ],
     "resolveJsonModule": true
   },
   "include": [
     "src",
-    "vite.config.ts"
+    "tests",
+    "*.config.ts"
   ]
 }

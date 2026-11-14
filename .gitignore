@@ -8,3 +8,6 @@ target/
 *.log
 src-tauri/gen/
 ui/dist/
+ui/test-results/
+ui/playwright-report/
+ui/visual-report/
