@@ -4,13 +4,24 @@ use std::{fs, path::PathBuf};
 use switchboard_core::store::{atomic_write, DataDirectory, FileCredentialStore};
 use switchboard_platform::Platform;
 
+#[cfg(windows)]
+#[path = "support/windows.rs"]
+mod windows_fixtures;
+
 fn main() {
+    #[cfg(windows)]
+    if windows_fixtures::is_fixture() {
+        windows_fixtures::fixture();
+        return;
+    }
     #[cfg(target_os = "macos")]
     let platform = switchboard_platform::macos::MacPlatform;
     #[cfg(target_os = "windows")]
     let platform = switchboard_platform::windows::WindowsPlatform::default();
     #[cfg(any(target_os = "macos", target_os = "windows"))]
     check(&platform);
+    #[cfg(windows)]
+    windows_fixtures::run();
 }
 fn check(platform: &impl Platform) {
     assert!(platform.data_dir().ends_with("Switchboard"));
