@@ -42,7 +42,8 @@ for (const name of scenarios) test(name, async ({ page }, info) => {
   const excluded = await panel.locator(name === 'main-unregistered-live' ? 'svg, .unregistered .link-button' : 'svg').evaluateAll(elements => elements.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }));
   const actual = await panel.screenshot({ animations: 'disabled', omitBackground: true });
   const corner = PNG.sync.read(actual);
-  expect(corner.data[3], 'panel corner must remain transparent').toBe(0);
+  // This checks CSS clipping only; the native WebView surface requires macOS acceptance.
+  expect(corner.data[3], 'CSS panel corner must remain transparent').toBe(0);
   writeFileSync(join(reportDir, `${name}-actual.png`), actual);
   await info.attach('current', { body: actual, contentType: 'image/png' });
   expect(errors).toEqual([]);
