@@ -14,6 +14,13 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { constructor(private callback: () => void) {} observe(node: Element) { measurements.set(node, this.callback); } disconnect() {} });
 });
 describe('application IPC and routing', () => {
+  it('focuses the panel on load and reopen instead of the refresh action', async () => {
+    render(<App />); await screen.findByRole('button', { name: '设置' });
+    await waitFor(() => expect(screen.getByRole('main')).toHaveFocus());
+    screen.getByRole('button', { name: '刷新额度' }).focus();
+    act(() => ipc.events.get('panel-shown')?.(undefined));
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
   it('opens confirmation, Escape closes only confirmation, and reopening panel resets the route', async () => {
     render(<App />); await screen.findByRole('button', { name: '设置' });
     fireEvent.click(screen.getByRole('button', { name: '设置' })); fireEvent.click(screen.getByRole('button', { name: '3 个账号' }));

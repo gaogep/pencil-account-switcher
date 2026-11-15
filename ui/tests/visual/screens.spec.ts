@@ -32,6 +32,7 @@ for (const name of scenarios) test(name, async ({ page }, info) => {
     await expect(avatar).toHaveCSS('height', `${size}px`);
     await expect(avatar).toHaveCSS('font-size', `${size === 36 ? 12 : 11}px`);
   }
+  await expect(panel).toHaveCSS('border-radius', '16px');
   const bounds = await panel.boundingBox();
   expect(bounds?.width).toBe(410);
   expect(await page.locator('.screen-content').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
@@ -40,6 +41,8 @@ for (const name of scenarios) test(name, async ({ page }, info) => {
   // import label are excluded. No text, rows, cards or dynamic layout is masked.
   const excluded = await panel.locator(name === 'main-unregistered-live' ? 'svg, .unregistered .link-button' : 'svg').evaluateAll(elements => elements.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }));
   const actual = await panel.screenshot({ animations: 'disabled', omitBackground: true });
+  const corner = PNG.sync.read(actual);
+  expect(corner.data[3], 'panel corner must remain transparent').toBe(0);
   writeFileSync(join(reportDir, `${name}-actual.png`), actual);
   await info.attach('current', { body: actual, contentType: 'image/png' });
   expect(errors).toEqual([]);
@@ -84,4 +87,16 @@ for (const name of scenarios) test(name, async ({ page }, info) => {
 });
 test.afterAll(() => {
   writeFileSync(join(reportDir, 'index.html'), `<!doctype html><meta charset="utf-8"><title>Switchboard 视觉对照</title><style>body{font-family:system-ui;padding:24px;background:#eee}section{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:36px}h2{width:100%}img{width:410px;height:auto;object-fit:contain;align-self:flex-start}</style><h1>基线 / 新版 / 差异</h1>${readdirSync(reportDir).filter(name => name.endsWith('.html') && name !== 'index.html').sort().map(name => readFileSync(join(reportDir, name), 'utf8')).join('')}`);
+});
+
+test('opening focus is quiet while Tab retains a visible focus indicator', async ({ page }) => {
+  await page.goto('/?mock=main');
+  const panel = page.getByRole('main');
+  await expect(panel).toBeFocused();
+  await expect(panel).toHaveCSS('outline-style', 'none');
+  // WebKit on macOS uses Option-Tab when full keyboard access is off.
+  await page.keyboard.press(process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
+  const refresh = page.getByRole('button', { name: '刷新额度' });
+  await expect(refresh).toBeFocused();
+  await expect(refresh).toHaveCSS('outline-style', 'solid');
 });
