@@ -28,6 +28,8 @@ gh workflow run upgrade-rehearsal.yml --ref t5-3-upgrade-rehearsal \
 
 ## 仍需实机验收
 
+2026-11-15 用户确认暂无 Windows 测试环境，本次交付代码并保留以下待办。统一跟踪清单见 [MANUAL_ACCEPTANCE.md](MANUAL_ACCEPTANCE.md)；这些项目尚未验证通过，正式发布与删旧代码继续保留到验收后。
+
 自动化夹具不能代替 TEST_PLAN 第 7 节完整的用户路径：
 
 | 项目 | 自动化覆盖 | 发布前仍需验证 |
