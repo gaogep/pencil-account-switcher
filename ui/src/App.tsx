@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { invoke, listen, loadSnapshot, mockMode } from './ipc';
 import type { ViewState } from './generated/ViewState';
 import type { IpcRequest } from './generated/IpcRequest';
@@ -9,13 +9,14 @@ import { MainScreen, SettingsScreen, ManageScreen, type Route } from './screens'
 export function App() {
   const [state, setState] = useState<ViewState | null>(null);
   const [route, navigate] = useState<Route>('main'); const [confirmId, confirm] = useState<string | null>(null);
+  const [opening, setOpening] = useState(0);
   const [error, setError] = useState<string | null>(null); const root = useRef<HTMLElement>(null);
   const send = (request: IpcRequest) => { void invoke(request).catch(e => setError(String(e))); };
   useEffect(() => {
     let disposed = false; let revision = 0; const stops: (() => void)[] = [];
     const addStop = (stop: () => void) => { if (disposed) stop(); else stops.push(stop); };
     const report = (e: unknown) => { if (!disposed) setError(String(e)); };
-    void listen('panel-shown', () => { if (!disposed) { navigate('main'); confirm(null); } }).then(addStop).catch(report);
+    void listen('panel-shown', () => { if (!disposed) { navigate('main'); confirm(null); setOpening(value => value + 1); } }).then(addStop).catch(report);
     void listen('state', next => { revision++; if (!disposed) { setState(next); setError(null); } }).then(async stop => {
       addStop(stop); if (disposed) return;
       const before = revision; const next = await invoke({ command: 'get_state' });
@@ -40,10 +41,11 @@ export function App() {
     const escape = (event: KeyboardEvent) => { if (event.key !== 'Escape') return; event.preventDefault(); if (confirmId) confirm(null); else send({ command: 'hide_panel' }); };
     document.addEventListener('keydown', escape); return () => document.removeEventListener('keydown', escape);
   }, [confirmId]);
+  useLayoutEffect(() => { root.current?.focus({ preventScroll: true }); }, [opening]);
   const account = state?.accounts.find(a => a.id === confirmId);
   useEffect(() => { if (state && confirmId && !account) confirm(null); }, [state, confirmId, account]);
   const gallery = mockMode && new URLSearchParams(location.search).has('gallery');
-  return <main class="panel" ref={root} aria-busy={!state}>
+  return <main class="panel" ref={root} tabIndex={-1} aria-busy={!state}>
     <div inert={account !== undefined}>{error && <StatusBanner feedback={{ text: error, kind: 'warning', caption: null }} />}{!state ? <BrandHeader /> : gallery ? <ComponentGallery state={state} /> : route === 'main' ? <MainScreen state={state} send={send} navigate={navigate} /> : route === 'settings' ? <SettingsScreen state={state} send={send} navigate={navigate} /> : <ManageScreen state={state} send={send} navigate={navigate} onRemove={confirm} />}</div>
     {account && <ConfirmDialog email={account.email} disabled={account.isCurrent || !state || operationLocks(state).removeAccount} onCancel={() => confirm(null)} onConfirm={() => { if (!account.isCurrent) { send({ command: 'remove_account', args: { id: account.id } }); confirm(null); } }} />}
   </main>;

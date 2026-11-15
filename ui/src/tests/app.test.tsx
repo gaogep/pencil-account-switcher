@@ -14,6 +14,28 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { constructor(private callback: () => void) {} observe(node: Element) { measurements.set(node, this.callback); } disconnect() {} });
 });
 describe('application IPC and routing', () => {
+  it('focuses the panel on load and reopen instead of the refresh action', async () => {
+    render(<App />); await screen.findByRole('button', { name: '设置' });
+    await waitFor(() => expect(screen.getByRole('main')).toHaveFocus());
+    screen.getByRole('button', { name: '刷新额度' }).focus();
+    act(() => ipc.events.get('panel-shown')?.(undefined));
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
+  it('reopening with a confirmation resets focus after dialog cleanup', async () => {
+    render(<App />); await screen.findByRole('button', { name: '设置' });
+    fireEvent.click(screen.getByRole('button', { name: '设置' })); fireEvent.click(screen.getByRole('button', { name: '3 个账号' }));
+    screen.getByRole('button', { name: `移除 ${state().accounts[1].email}` }).focus();
+    fireEvent.click(screen.getByRole('button', { name: `移除 ${state().accounts[1].email}` }));
+    act(() => ipc.events.get('panel-shown')?.(undefined));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
+  it('keeps a focused control when initial state effects finish', async () => {
+    render(<App />); await screen.findByRole('button', { name: '设置' });
+    const refresh = screen.getByRole('button', { name: '刷新额度' }); refresh.focus();
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+    expect(refresh).toHaveFocus();
+  });
   it('opens confirmation, Escape closes only confirmation, and reopening panel resets the route', async () => {
     render(<App />); await screen.findByRole('button', { name: '设置' });
     fireEvent.click(screen.getByRole('button', { name: '设置' })); fireEvent.click(screen.getByRole('button', { name: '3 个账号' }));

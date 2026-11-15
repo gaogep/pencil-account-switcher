@@ -49,6 +49,7 @@ pub fn setup(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             window
                 .visible(false)
                 .decorations(false)
+                .transparent(true)
                 .resizable(false)
                 .skip_taskbar(true)
                 .min_inner_size(410.0, 200.0)

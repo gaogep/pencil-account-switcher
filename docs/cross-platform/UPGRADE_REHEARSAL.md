@@ -28,7 +28,7 @@ gh workflow run upgrade-rehearsal.yml --ref t5-3-upgrade-rehearsal \
 
 ## 仍需实机验收
 
-2026-11-15 用户确认暂无 Windows 测试环境，本次交付代码并保留以下待办。统一跟踪清单见 [MANUAL_ACCEPTANCE.md](MANUAL_ACCEPTANCE.md)；这些项目尚未验证通过，正式发布与删旧代码继续保留到验收后。
+2026-11-15 用户确认暂无 Windows 测试环境，本次交付代码并保留以下待办。统一跟踪清单见 [MANUAL_ACCEPTANCE.md](MANUAL_ACCEPTANCE.md)；这些项目尚未验证通过；用户随后授权本次 2.0.0 在双端自动化检查与签名通过后公开发布，删旧代码仍等待验收。
 
 自动化夹具不能代替 TEST_PLAN 第 7 节完整的用户路径：
 
@@ -40,6 +40,6 @@ gh workflow run upgrade-rehearsal.yml --ref t5-3-upgrade-rehearsal \
 | UP-04 同时含 mac/Win 资产 | core 测试验证旧规则只选择 arm64 ZIP | 在旧 Swift 客户端从测试 feed 实际下载一次 |
 | UP-05 篡改签名 | core 和 Node 回归均拒绝篡改，安装准备之前终止 | 两端 UI 的提示与保留旧应用/数据 |
 
-使用专门测试账号和备份。T0.5 Windows 11 ARM 虚拟机与 TEST_PLAN 的多屏、高 DPI、真实登录、切号等人工项目仍需有可用设备后执行。原 Swift 源码、旧测试和 mac 视觉基线保留至验收完成；正式 `v2.0.0` 发布和删旧代码应在这些记录具备后进行。
+使用专门测试账号和备份。T0.5 Windows 11 ARM 虚拟机与 TEST_PLAN 的多屏、高 DPI、真实登录、切号等人工项目仍需有可用设备后执行。原 Swift 源码、旧测试和 mac 视觉基线保留至验收完成；本次 `v2.0.0` 按用户后续指令公开发布并披露未验收范围；删旧代码仍须等待这些记录。
 
 草稿下载作业使用 `contents: write`，仅用于获得草稿可见权限，不调用发布接口。GitHub 仅向有推送权限的调用者列出草稿，见 [Releases API](https://docs.github.com/en/rest/releases/releases#list-releases)。

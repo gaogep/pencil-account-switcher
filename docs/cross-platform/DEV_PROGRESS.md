@@ -9,7 +9,7 @@
 | T5.2 发布流水线 | 已完成；[PR #6](https://github.com/gaogep/pencil-account-switcher/pull/6)；双端签名包、完整资产与草稿发布成功 |
 | T5.3 升级演练 | 工具已实现；[PR #7](https://github.com/gaogep/pencil-account-switcher/pull/7)；双端 2.0.0 → 2.0.1 隔离演练通过，包含 mac 签名包替换、Windows 真实 NSIS 升级/重启及三个账号夹具保留 |
 | T6.1 文档与存档 | README 双端说明、Windows SmartScreen、发布/验收文档和 `swift-final` 存档已完成；旧代码保留至验收后清理 |
-| 人工与正式发布 | 按用户确认保留 T0.5、真实账号/自启迁移/多屏等实机待办；候选保持草稿，正式公开发布尚未执行 |
+| 人工与正式发布 | 按用户确认保留 T0.5、真实账号/自启迁移/多屏等实机待办；用户随后明确要求发布 2.0.0，按双端自动化检查与签名门禁继续公开发布；实机待办不标为通过 |
 
 ## 当前验证证据
 
