@@ -1,6 +1,7 @@
 //! Platform-independent Switchboard logic.
 
 pub mod app_model;
+pub mod ipc;
 pub mod model;
 pub mod pen_adapter;
 pub mod quota;

@@ -2,38 +2,107 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag matching tauri.conf.json; manual runs always create a draft"
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    runs-on: macos-14
-    permissions:
-      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: macos
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows
+    runs-on: ${{ matrix.os }}
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check version matches tag
-        run: |
-          PLIST_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Support/Info.plist)
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          if [ "$PLIST_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Info.plist 版本 $PLIST_VERSION 与 tag $GITHUB_REF_NAME 不一致"
-            exit 1
-          fi
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" Support/Info.plist
-      - name: Regression tests
-        run: chmod +x Tests/run.sh && ./Tests/run.sh
-      - name: Build DMG and zip
-        run: chmod +x build.sh Support/make_dmg.sh && ./Support/make_dmg.sh
-      - name: Sign update zip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - run: npm ci
+      - name: Verify release version
+        run: node scripts/release_assets.mjs check-version "$env:RELEASE_TAG"
+        shell: pwsh
+      - run: npm test
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --features platform-it --locked -- -D warnings
+      - run: cargo test --workspace --features platform-it --locked
+      - name: Windows update helper integration
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./scripts/test_windows_update.ps1
+      - name: Build native bundles
+        run: npm run tauri -- build --ci --target ${{ matrix.target }} -- --locked
+      - name: Stage compatible release assets
+        run: node scripts/release_assets.mjs package ${{ matrix.target }}
+      - name: Sign update package with existing key
         env:
           UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
-        run: swift Support/sign_update.swift build/Pencil-Account-Switcher-*-arm64.zip
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
+        shell: pwsh
+        run: |
+          Get-ChildItem build/release -File | Where-Object { $_.Extension -in '.zip', '.exe' } | ForEach-Object {
+            node scripts/sign_update.mjs $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - uses: actions/upload-artifact@v4
         with:
-          files: |
-            build/Pencil-Account-Switcher-*-arm64.dmg
-            build/Pencil-Account-Switcher-*-arm64.zip
-            build/Pencil-Account-Switcher-*-arm64.zip.sig
+          name: release-${{ matrix.platform }}
+          path: build/release/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: build/release
+      - name: Verify names and signatures before release
+        run: node scripts/release_assets.mjs verify build/release "$RELEASE_TAG"
+      - name: Refuse to overwrite a published release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data } = await github.rest.repos.getReleaseByTag({ ...context.repo, tag: process.env.RELEASE_TAG });
+              if (!data.draft) core.setFailed('A published release already exists for this tag');
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
+          files: build/release/*
+          fail_on_unmatched_files: true
+          body_path: docs/cross-platform/RELEASE_NOTES.md
           generate_release_notes: true

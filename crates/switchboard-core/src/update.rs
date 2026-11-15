@@ -14,7 +14,7 @@ use std::{
 use tokio_util::sync::CancellationToken;
 
 const PUBLIC_KEY: &str = "i4OQxXFQgGlNb+T2kwMmSawM6Ps+2YsU1uvtLsPGvpc=";
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, ts_rs::TS)]
 pub struct AppRelease {
     pub version: String,
     pub asset_url: String,

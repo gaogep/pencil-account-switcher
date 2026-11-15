@@ -1,0 +1,58 @@
+{
+  "state": {
+    "accounts": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "email": "alex.chen@gmail.com",
+        "plan": "Pro 方案",
+        "isCurrent": true,
+        "usedDays": 1,
+        "totalDays": 5,
+        "lastQuotaUpdate": 816229440,
+        "authState": "ok"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "email": "jamie.work@outlook.com",
+        "plan": "免费方案",
+        "isCurrent": false,
+        "usedDays": 2,
+        "totalDays": 5,
+        "lastQuotaUpdate": 816229440,
+        "authState": "ok"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000003",
+        "email": "alex.creative@icloud.com",
+        "plan": "团队方案",
+        "isCurrent": false,
+        "usedDays": 4,
+        "totalDays": 5,
+        "lastQuotaUpdate": 816229440,
+        "authState": "ok"
+      }
+    ],
+    "liveEmail": null,
+    "unregisteredLiveEmail": null,
+    "switchingTo": null,
+    "refreshing": false,
+    "addingAccount": false,
+    "feedback": null,
+    "update": {
+      "status": "available",
+      "release": {
+        "version": "1.1.0",
+        "asset_url": "https://example.invalid/Pencil-Account-Switcher-1.1.0-arm64.zip",
+        "signature_url": "https://example.invalid/Pencil-Account-Switcher-1.1.0-arm64.zip.sig",
+        "page_url": "https://example.invalid/releases/v1.1.0"
+      },
+      "silenced": false
+    },
+    "launchAtLogin": false,
+    "version": "1.0.1",
+    "persistenceBlocked": false,
+    "demo": true
+  },
+  "route": "main",
+  "confirmRemoveEmail": null
+}

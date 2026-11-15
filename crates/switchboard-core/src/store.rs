@@ -48,7 +48,9 @@ pub fn atomic_write(path: &Path, data: &[u8], _private: bool) -> io::Result<()> 
         match file.persist(path) {
             Ok(_) => return Ok(()),
             Err(e) => {
-                if e.error.raw_os_error() == Some(32) && Instant::now() < deadline {
+                // MoveFileEx can report ACCESS_DENIED for a destination opened
+                // without FILE_SHARE_DELETE, as well as SHARING_VIOLATION.
+                if matches!(e.error.raw_os_error(), Some(5 | 32)) && Instant::now() < deadline {
                     file = e.file;
                     thread::sleep(Duration::from_millis(50));
                     continue;

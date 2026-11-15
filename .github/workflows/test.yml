@@ -2,8 +2,9 @@ name: Test
 
 on:
   push:
-    branches: [main]
+    branches: [main, t4-3-windows-login, "t5-*", "t6-*"]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   rust:
@@ -17,9 +18,19 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:ui
       - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
-      - run: cargo test --workspace --locked
+      - run: cargo clippy --workspace --all-targets --features platform-it --locked -- -D warnings
+      - run: cargo test --workspace --features platform-it --locked
+      - name: Windows update helper integration
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./scripts/test_windows_update.ps1
   test:
     runs-on: macos-latest
     steps:
@@ -28,3 +39,41 @@ jobs:
         run: chmod +x build.sh && ./build.sh
       - name: Regression tests
         run: chmod +x Tests/run.sh && ./Tests/run.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm run test:release
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:ui
+      - run: npm test
+  visual:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run test:visual
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-${{ matrix.os }}
+          path: |
+            ui/visual-report/
+            ui/playwright-report/
+            ui/test-results/

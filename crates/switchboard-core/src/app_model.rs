@@ -87,6 +87,7 @@ pub trait AppServices: Send + Sync + 'static {
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(ts_rs::TS)]
 pub struct Feedback {
     pub text: String,
     pub kind: FeedbackKind,
@@ -94,6 +95,7 @@ pub struct Feedback {
 }
 #[derive(Clone, Copy, Debug, Serialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(ts_rs::TS)]
 pub enum FeedbackKind {
     Success,
     Loading,
@@ -101,6 +103,7 @@ pub enum FeedbackKind {
 }
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "status", rename_all = "camelCase")]
+#[derive(ts_rs::TS)]
 pub enum UpdateState {
     Idle,
     Available {
@@ -110,7 +113,9 @@ pub enum UpdateState {
     Downloading {
         release: AppRelease,
         percent: u8,
+        #[ts(type = "number")]
         received: u64,
+        #[ts(type = "number | null")]
         total: Option<u64>,
     },
     Ready {
@@ -120,6 +125,7 @@ pub enum UpdateState {
 }
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+#[derive(ts_rs::TS)]
 pub struct ViewState {
     pub accounts: Vec<AccountRecord>,
     pub live_email: Option<String>,

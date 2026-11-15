@@ -1,0 +1,7 @@
+{
+  "bundle": {
+    "targets": ["nsis"],
+    "icon": ["icons/app.ico"],
+    "windows": { "nsis": { "installMode": "currentUser" } }
+  }
+}
